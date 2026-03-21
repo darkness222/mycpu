@@ -1,0 +1,74 @@
+[
+{
+  "directory": "D:/study/ripes/mycpu/build",
+  "command": "D:\\mingw64\\bin\\c++.exe  @CMakeFiles/myCPU.dir/includes_CXX.rsp -std=c++17 -Wall -Wextra -Wpedantic -o CMakeFiles\\myCPU.dir\\src\\main.cpp.obj -c D:\\study\\ripes\\mycpu\\src\\main.cpp",
+  "file": "D:/study/ripes/mycpu/src/main.cpp",
+  "output": "CMakeFiles/myCPU.dir/src/main.cpp.obj"
+},
+{
+  "directory": "D:/study/ripes/mycpu/build",
+  "command": "D:\\mingw64\\bin\\c++.exe  @CMakeFiles/myCPU.dir/includes_CXX.rsp -std=c++17 -Wall -Wextra -Wpedantic -o CMakeFiles\\myCPU.dir\\src\\cpu\\CPU.cpp.obj -c D:\\study\\ripes\\mycpu\\src\\cpu\\CPU.cpp",
+  "file": "D:/study/ripes/mycpu/src/cpu/CPU.cpp",
+  "output": "CMakeFiles/myCPU.dir/src/cpu/CPU.cpp.obj"
+},
+{
+  "directory": "D:/study/ripes/mycpu/build",
+  "command": "D:\\mingw64\\bin\\c++.exe  @CMakeFiles/myCPU.dir/includes_CXX.rsp -std=c++17 -Wall -Wextra -Wpedantic -o CMakeFiles\\myCPU.dir\\src\\cpu\\Decoder.cpp.obj -c D:\\study\\ripes\\mycpu\\src\\cpu\\Decoder.cpp",
+  "file": "D:/study/ripes/mycpu/src/cpu/Decoder.cpp",
+  "output": "CMakeFiles/myCPU.dir/src/cpu/Decoder.cpp.obj"
+},
+{
+  "directory": "D:/study/ripes/mycpu/build",
+  "command": "D:\\mingw64\\bin\\c++.exe  @CMakeFiles/myCPU.dir/includes_CXX.rsp -std=c++17 -Wall -Wextra -Wpedantic -o CMakeFiles\\myCPU.dir\\src\\cpu\\RegisterFile.cpp.obj -c D:\\study\\ripes\\mycpu\\src\\cpu\\RegisterFile.cpp",
+  "file": "D:/study/ripes/mycpu/src/cpu/RegisterFile.cpp",
+  "output": "CMakeFiles/myCPU.dir/src/cpu/RegisterFile.cpp.obj"
+},
+{
+  "directory": "D:/study/ripes/mycpu/build",
+  "command": "D:\\mingw64\\bin\\c++.exe  @CMakeFiles/myCPU.dir/includes_CXX.rsp -std=c++17 -Wall -Wextra -Wpedantic -o CMakeFiles\\myCPU.dir\\src\\cpu\\CsrFile.cpp.obj -c D:\\study\\ripes\\mycpu\\src\\cpu\\CsrFile.cpp",
+  "file": "D:/study/ripes/mycpu/src/cpu/CsrFile.cpp",
+  "output": "CMakeFiles/myCPU.dir/src/cpu/CsrFile.cpp.obj"
+},
+{
+  "directory": "D:/study/ripes/mycpu/build",
+  "command": "D:\\mingw64\\bin\\c++.exe  @CMakeFiles/myCPU.dir/includes_CXX.rsp -std=c++17 -Wall -Wextra -Wpedantic -o CMakeFiles\\myCPU.dir\\src\\cpu\\TrapHandler.cpp.obj -c D:\\study\\ripes\\mycpu\\src\\cpu\\TrapHandler.cpp",
+  "file": "D:/study/ripes/mycpu/src/cpu/TrapHandler.cpp",
+  "output": "CMakeFiles/myCPU.dir/src/cpu/TrapHandler.cpp.obj"
+},
+{
+  "directory": "D:/study/ripes/mycpu/build",
+  "command": "D:\\mingw64\\bin\\c++.exe  @CMakeFiles/myCPU.dir/includes_CXX.rsp -std=c++17 -Wall -Wextra -Wpedantic -o CMakeFiles\\myCPU.dir\\src\\memory\\Memory.cpp.obj -c D:\\study\\ripes\\mycpu\\src\\memory\\Memory.cpp",
+  "file": "D:/study/ripes/mycpu/src/memory/Memory.cpp",
+  "output": "CMakeFiles/myCPU.dir/src/memory/Memory.cpp.obj"
+},
+{
+  "directory": "D:/study/ripes/mycpu/build",
+  "command": "D:\\mingw64\\bin\\c++.exe  @CMakeFiles/myCPU.dir/includes_CXX.rsp -std=c++17 -Wall -Wextra -Wpedantic -o CMakeFiles\\myCPU.dir\\src\\bus\\Bus.cpp.obj -c D:\\study\\ripes\\mycpu\\src\\bus\\Bus.cpp",
+  "file": "D:/study/ripes/mycpu/src/bus/Bus.cpp",
+  "output": "CMakeFiles/myCPU.dir/src/bus/Bus.cpp.obj"
+},
+{
+  "directory": "D:/study/ripes/mycpu/build",
+  "command": "D:\\mingw64\\bin\\c++.exe  @CMakeFiles/myCPU.dir/includes_CXX.rsp -std=c++17 -Wall -Wextra -Wpedantic -o CMakeFiles\\myCPU.dir\\src\\devices\\Device.cpp.obj -c D:\\study\\ripes\\mycpu\\src\\devices\\Device.cpp",
+  "file": "D:/study/ripes/mycpu/src/devices/Device.cpp",
+  "output": "CMakeFiles/myCPU.dir/src/devices/Device.cpp.obj"
+},
+{
+  "directory": "D:/study/ripes/mycpu/build",
+  "command": "D:\\mingw64\\bin\\c++.exe  @CMakeFiles/myCPU.dir/includes_CXX.rsp -std=c++17 -Wall -Wextra -Wpedantic -o CMakeFiles\\myCPU.dir\\src\\assembler\\Assembler.cpp.obj -c D:\\study\\ripes\\mycpu\\src\\assembler\\Assembler.cpp",
+  "file": "D:/study/ripes/mycpu/src/assembler/Assembler.cpp",
+  "output": "CMakeFiles/myCPU.dir/src/assembler/Assembler.cpp.obj"
+},
+{
+  "directory": "D:/study/ripes/mycpu/build",
+  "command": "D:\\mingw64\\bin\\c++.exe  @CMakeFiles/myCPU.dir/includes_CXX.rsp -std=c++17 -Wall -Wextra -Wpedantic -o CMakeFiles\\myCPU.dir\\src\\rpc\\RpcServer.cpp.obj -c D:\\study\\ripes\\mycpu\\src\\rpc\\RpcServer.cpp",
+  "file": "D:/study/ripes/mycpu/src/rpc/RpcServer.cpp",
+  "output": "CMakeFiles/myCPU.dir/src/rpc/RpcServer.cpp.obj"
+},
+{
+  "directory": "D:/study/ripes/mycpu/build",
+  "command": "D:\\mingw64\\bin\\c++.exe  @CMakeFiles/myCPU.dir/includes_CXX.rsp -std=c++17 -Wall -Wextra -Wpedantic -o CMakeFiles\\myCPU.dir\\src\\elf\\ElfLoader.cpp.obj -c D:\\study\\ripes\\mycpu\\src\\elf\\ElfLoader.cpp",
+  "file": "D:/study/ripes/mycpu/src/elf/ElfLoader.cpp",
+  "output": "CMakeFiles/myCPU.dir/src/elf/ElfLoader.cpp.obj"
+}
+]

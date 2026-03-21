@@ -1,0 +1,11 @@
+手动启动
+1. 启动后端 RPC 服务（端口 8080）
+cd mycpu/build
+myCPU.exe --server
+
+2. 新开一个终端，启动前端（端口 3000）
+cd mycpu/web
+npm run dev
+
+3. 浏览器访问
+http://localhost:3000

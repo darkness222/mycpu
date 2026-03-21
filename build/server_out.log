@@ -1,0 +1,20 @@
+====================================
+  myCPU RISC-V Simulator v1.0
+====================================
+
+启动 RPC 服务器模式...
+监听端口: 8080
+按 Ctrl+C 停止服务器
+
+RPC Server listening on port 8080
+Received request: GET /get_state (body size: 0)
+  handleGetState completed, response size: 595
+  Sending response (699 bytes)...
+  send() returned: 699
+Received request: POST /assemble (body size: 0)
+  Sending response (141 bytes)...
+  send() returned: 141
+Received request: GET /get_state (body size: 0)
+  handleGetState completed, response size: 595
+  Sending response (699 bytes)...
+  send() returned: 699
