@@ -297,7 +297,15 @@ void CPU::execute() {
             break;
 
         case Opcode::OP_IMM:
-            alu_result = alu(operand1, instr.imm, instr.funct3);
+            if (instr.funct3 == 0x5) {
+                uint32 shamt = static_cast<uint32>(instr.imm) & 0x1F;
+                bool arithmetic_shift = (instr.funct7 == 0x20);
+                alu_result = arithmetic_shift
+                    ? (operand1 >> shamt)
+                    : static_cast<int32>(static_cast<uint32>(operand1) >> shamt);
+            } else {
+                alu_result = alu(operand1, instr.imm, instr.funct3);
+            }
             write_reg = instr.rd;
             write_value = alu_result;
             reg_write = true;
@@ -705,7 +713,10 @@ int32 CPU::alu(int32 operand1, int32 operand2, uint8 funct3, bool is_sub) {
         case 0x2: return (operand1 < operand2) ? 1 : 0;
         case 0x3: return ((uint32)operand1 < (uint32)operand2) ? 1 : 0;
         case 0x4: return operand1 ^ operand2;
-        case 0x5: return is_sub ? (operand1 >> operand2) : ((uint32)operand1 >> (operand2 & 0x1F));
+        case 0x5:
+            return is_sub
+                ? (operand1 >> (operand2 & 0x1F))
+                : static_cast<int32>(static_cast<uint32>(operand1) >> (operand2 & 0x1F));
         case 0x6: return operand1 | operand2;
         case 0x7: return operand1 & operand2;
         default: return 0;
