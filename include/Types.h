@@ -30,7 +30,7 @@ using Byte = uint8_t;
 constexpr size_t NUM_REGISTERS = 32;
 
 // 内存大小 (16KB)
-constexpr size_t MEMORY_SIZE = 16 * 1024;
+constexpr size_t MEMORY_SIZE = 256 * 1024;
 
 // 内存区域定义
 enum class MemorySegment : uint8_t {
@@ -54,6 +54,7 @@ enum class CpuState : uint8_t {
 // 指令操作码 (简化版 RISC-V I 型)
 enum class Opcode : uint8_t {
     LOAD = 0x03,
+    FENCE = 0x0F,
     STORE = 0x23,
     BRANCH = 0x63,
     JAL = 0x6F,

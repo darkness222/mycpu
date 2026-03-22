@@ -1617,6 +1617,7 @@ CMakeFiles/myCPU.dir/src/main.cpp.obj: D:/study/ripes/mycpu/src/main.cpp \
   D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/basic_string.h \
   D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/basic_string.tcc \
   D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/char_traits.h \
+  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/codecvt.h \
   D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/concept_check.h \
   D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/cpp_type_traits.h \
   D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/cxxabi_forced.h \
@@ -1625,6 +1626,7 @@ CMakeFiles/myCPU.dir/src/main.cpp.obj: D:/study/ripes/mycpu/src/main.cpp \
   D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/exception.h \
   D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/exception_defines.h \
   D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/exception_ptr.h \
+  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/fstream.tcc \
   D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/functexcept.h \
   D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/functional_hash.h \
   D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/hash_bytes.h \
@@ -1701,6 +1703,7 @@ CMakeFiles/myCPU.dir/src/main.cpp.obj: D:/study/ripes/mycpu/src/main.cpp \
   D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/ext/numeric_traits.h \
   D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/ext/string_conversions.h \
   D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/ext/type_traits.h \
+  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/fstream \
   D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/functional \
   D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/initializer_list \
   D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/ios \
@@ -1728,8 +1731,10 @@ CMakeFiles/myCPU.dir/src/main.cpp.obj: D:/study/ripes/mycpu/src/main.cpp \
   D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/utility \
   D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/vector \
   D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32/bits/atomic_word.h \
+  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32/bits/basic_file.h \
   D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32/bits/c++allocator.h \
   D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32/bits/c++config.h \
+  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32/bits/c++io.h \
   D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32/bits/c++locale.h \
   D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32/bits/cpu_defines.h \
   D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32/bits/ctype_base.h \
@@ -2469,8 +2474,6 @@ D:/mingw64/x86_64-w64-mingw32/include/wincon.h:
 
 D:/mingw64/x86_64-w64-mingw32/include/profileapi.h:
 
-D:/mingw64/x86_64-w64-mingw32/include/processthreadsapi.h:
-
 D:/mingw64/x86_64-w64-mingw32/include/processenv.h:
 
 D:/mingw64/x86_64-w64-mingw32/include/winsock.h:
@@ -2604,6 +2607,12 @@ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/avx512vpopcntdqintrin.h:
 D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/avx512vlbwintrin.h:
 
 D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/avx512vbmivlintrin.h:
+
+D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/avx512vbmi2intrin.h:
+
+D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/avx512pfintrin.h:
+
+D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/avx512ifmavlintrin.h:
 
 D:/mingw64/x86_64-w64-mingw32/include/winapifamily.h:
 
@@ -2769,6 +2778,8 @@ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/array:
 
 D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/exception_defines.h:
 
+D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32/bits/basic_file.h:
+
 D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/cpp_type_traits.h:
 
 D:/mingw64/x86_64-w64-mingw32/include/msxml.h:
@@ -2778,6 +2789,10 @@ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include-fixed/syslimits.h:
 D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/locale_facets_nonio.h:
 
 D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/concept_check.h:
+
+D:/mingw64/x86_64-w64-mingw32/include/processthreadsapi.h:
+
+D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32/bits/c++io.h:
 
 D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/basic_string.tcc:
 
@@ -2987,8 +3002,6 @@ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/ios:
 
 D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32/bits/ctype_inline.h:
 
-D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/avx512ifmavlintrin.h:
-
 D:/mingw64/x86_64-w64-mingw32/include/wnnc.h:
 
 D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/iosfwd:
@@ -3002,12 +3015,6 @@ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32/bits/
 D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/ext/type_traits.h:
 
 D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/avx512erintrin.h:
-
-D:/mingw64/x86_64-w64-mingw32/include/windows.h:
-
-D:/mingw64/x86_64-w64-mingw32/include/objidlbase.h:
-
-D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/locale:
 
 D:/mingw64/x86_64-w64-mingw32/include/winnt.h:
 
@@ -3053,6 +3060,10 @@ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/hashtable_policy.h:
 
 D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/string:
 
+D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/avx512vbmi2vlintrin.h:
+
+D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/type_traits:
+
 D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/unordered_map:
 
 D:/study/ripes/mycpu/src/devices/Device.cpp:
@@ -3072,6 +3083,14 @@ D:/mingw64/x86_64-w64-mingw32/include/ddeml.h:
 D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32/bits/atomic_word.h:
 
 D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32/bits/c++allocator.h:
+
+D:/mingw64/x86_64-w64-mingw32/include/windows.h:
+
+D:/mingw64/x86_64-w64-mingw32/include/objidlbase.h:
+
+D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/locale:
+
+D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/fstream:
 
 D:/mingw64/x86_64-w64-mingw32/include/objidl.h:
 
@@ -3223,13 +3242,17 @@ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/avx512fintrin.h:
 
 D:/study/ripes/mycpu/src/cpu/TrapHandler.cpp:
 
+D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/fstream.tcc:
+
+D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/system_error:
+
+D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/thread:
+
 D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/functexcept.h:
 
 D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/parse_numbers.h:
 
 D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/chrono:
-
-D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/avx512vbmi2intrin.h:
 
 D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/avx512vbmiintrin.h:
 
@@ -3242,14 +3265,6 @@ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/clflushoptintrin.h:
 D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/ctime:
 
 D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/ratio:
-
-D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/system_error:
-
-D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/thread:
-
-D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/type_traits:
-
-D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/avx512vbmi2vlintrin.h:
 
 D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/stream_iterator.h:
 
@@ -3270,5 +3285,3 @@ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/avx2intrin.h:
 D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/avx5124fmapsintrin.h:
 
 D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/avx5124vnniwintrin.h:
-
-D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/avx512pfintrin.h:

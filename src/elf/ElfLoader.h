@@ -79,6 +79,19 @@ struct Elf32_Phdr {
     uint32 p_flags;   // Segment flags
     uint32 p_align;   // Segment alignment
 };
+
+struct Elf32_Shdr {
+    uint32 sh_name;
+    uint32 sh_type;
+    uint32 sh_flags;
+    uint32 sh_addr;
+    uint32 sh_offset;
+    uint32 sh_size;
+    uint32 sh_link;
+    uint32 sh_info;
+    uint32 sh_addralign;
+    uint32 sh_entsize;
+};
 #pragma pack(pop)
 
 // ===== ELF 加载信息 =====
@@ -117,12 +130,14 @@ public:
 
     // 获取文件类型
     uint16 getFileType() const { return elf_header_.e_type; }
+    uint32 getSectionAddress(const std::string& name) const;
 
     // 打印 ELF 信息 (调试用)
     std::string getInfo() const;
 
 private:
     bool parseHeader();
+    bool parseSectionHeaders();
     std::string readString(uint32 offset) const;
 
     bool is_valid_;
@@ -130,6 +145,8 @@ private:
     std::vector<uint8> elf_data_;
     Elf32_Ehdr elf_header_;
     std::vector<Elf32_Phdr> program_headers_;
+    std::vector<Elf32_Shdr> section_headers_;
+    std::string section_string_table_;
     uint32 max_load_addr_;
 };
 

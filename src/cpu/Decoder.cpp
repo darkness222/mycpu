@@ -22,9 +22,11 @@ Instruction Decoder::decode(uint32 instruction, uint32 pc) {
         case Opcode::OP:
         case Opcode::OP_IMM:
         case Opcode::LOAD:
+        case Opcode::FENCE:
         case Opcode::STORE:
         case Opcode::BRANCH:
         case Opcode::JALR:
+        case Opcode::SYSTEM:
             instr.imm = decodeImmediate(instruction, opcode);
             break;
         case Opcode::LUI:
@@ -62,6 +64,7 @@ int32 Decoder::decodeImmediate(uint32 instruction, Opcode opcode) {
         case Opcode::OP_IMM:
         case Opcode::JALR:
         case Opcode::LOAD:
+        case Opcode::SYSTEM:
             {
                 imm = static_cast<int32>(instruction >> 20);
                 if (imm & 0x800) {
@@ -144,6 +147,9 @@ std::string Decoder::disassemble(const Instruction& instr) const {
                 oss << op << " x" << (int)instr.rs2 << ", " << instr.imm
                     << "(x" << (int)instr.rs1 << ")";
             }
+            break;
+        case Opcode::FENCE:
+            oss << ((instr.funct3 == 0x1) ? "fence.i" : "fence");
             break;
         case Opcode::BRANCH:
             {
@@ -262,6 +268,7 @@ std::string Decoder::opcodeToString(Opcode op) {
         case Opcode::OP_IMM: return "OP_IMM";
         case Opcode::OP: return "OP";
         case Opcode::SYSTEM: return "SYSTEM";
+        case Opcode::FENCE: return "FENCE";
         case Opcode::HALT: return "HALT";
         default: return "UNKNOWN";
     }

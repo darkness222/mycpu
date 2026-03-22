@@ -39,6 +39,10 @@ public:
     // ===== 执行模式 =====
     void setExecMode(ExecMode mode) { exec_mode_ = mode; }
     ExecMode getExecMode() const { return exec_mode_; }
+    bool didTestFinish() const { return test_finished_; }
+    bool didTestPass() const { return test_passed_; }
+    uint32 getTestCode() const { return test_code_; }
+    uint32 getTohostAddress() const { return tohost_address_; }
 
     // ===== CSR / Trap 接口 =====
     CsrFile& getCsr() { return csr_; }
@@ -109,6 +113,10 @@ private:
     uint32 fetch_instruction_;
     bool branch_taken_;
     uint32 branch_target_;
+    bool test_finished_;
+    bool test_passed_;
+    uint32 test_code_;
+    uint32 tohost_address_;
 };
 
 } // namespace mycpu

@@ -34,6 +34,7 @@ public:
 private:
     std::array<uint8, MEMORY_SIZE> memory_;
     void checkBounds(Address addr) const;
+    bool translateAddress(Address addr, size_t& index) const;
 };
 
 } // namespace mycpu

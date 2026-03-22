@@ -64,6 +64,44 @@ bool ElfLoader::parseHeader() {
         }
     }
 
+    if (!parseSectionHeaders()) {
+        return false;
+    }
+
+    return true;
+}
+
+bool ElfLoader::parseSectionHeaders() {
+    section_headers_.clear();
+    section_string_table_.clear();
+
+    if (elf_header_.e_shoff == 0 || elf_header_.e_shnum == 0) {
+        return true;
+    }
+
+    for (uint16 i = 0; i < elf_header_.e_shnum; ++i) {
+        Elf32_Shdr shdr;
+        size_t offset = elf_header_.e_shoff + i * elf_header_.e_shentsize;
+        if (offset + sizeof(Elf32_Shdr) > elf_data_.size()) {
+            return false;
+        }
+        std::memcpy(&shdr, elf_data_.data() + offset, sizeof(Elf32_Shdr));
+        section_headers_.push_back(shdr);
+    }
+
+    if (elf_header_.e_shstrndx >= section_headers_.size()) {
+        return true;
+    }
+
+    const auto& shstr = section_headers_[elf_header_.e_shstrndx];
+    if (shstr.sh_offset + shstr.sh_size > elf_data_.size()) {
+        return false;
+    }
+
+    section_string_table_.assign(
+        reinterpret_cast<const char*>(elf_data_.data() + shstr.sh_offset),
+        shstr.sh_size
+    );
     return true;
 }
 
@@ -162,6 +200,25 @@ std::string ElfLoader::getInfo() const {
     }
 
     return oss.str();
+}
+
+uint32 ElfLoader::getSectionAddress(const std::string& name) const {
+    if (section_string_table_.empty()) {
+        return 0;
+    }
+
+    for (const auto& shdr : section_headers_) {
+        if (shdr.sh_name >= section_string_table_.size()) {
+            continue;
+        }
+
+        const char* section_name = section_string_table_.c_str() + shdr.sh_name;
+        if (name == section_name) {
+            return shdr.sh_addr;
+        }
+    }
+
+    return 0;
 }
 
 std::string ElfLoader::readString(uint32 offset) const {

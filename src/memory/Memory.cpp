@@ -14,52 +14,58 @@ void Memory::reset() {
 }
 
 uint8 Memory::readByte(Address addr) const {
-    if (addr >= MEMORY_SIZE) {
+    size_t index = 0;
+    if (!translateAddress(addr, index)) {
         return 0;
     }
-    return memory_[addr];
+    return memory_[index];
 }
 
 uint16 Memory::readHalfWord(Address addr) const {
-    if (addr + 1 >= MEMORY_SIZE) {
+    size_t index = 0;
+    if (!translateAddress(addr, index) || index + 1 >= MEMORY_SIZE) {
         return 0;
     }
-    uint16 value = memory_[addr] | (memory_[addr + 1] << 8);
+    uint16 value = memory_[index] | (memory_[index + 1] << 8);
     return value;
 }
 
 uint32 Memory::readWord(Address addr) const {
-    if (addr + 3 >= MEMORY_SIZE) {
+    size_t index = 0;
+    if (!translateAddress(addr, index) || index + 3 >= MEMORY_SIZE) {
         return 0;
     }
-    uint32 value = memory_[addr] | (memory_[addr + 1] << 8) |
-                   (memory_[addr + 2] << 16) | (memory_[addr + 3] << 24);
+    uint32 value = memory_[index] | (memory_[index + 1] << 8) |
+                   (memory_[index + 2] << 16) | (memory_[index + 3] << 24);
     return value;
 }
 
 void Memory::writeByte(Address addr, uint8 value) {
-    if (addr >= MEMORY_SIZE) {
+    size_t index = 0;
+    if (!translateAddress(addr, index)) {
         return;
     }
-    memory_[addr] = value;
+    memory_[index] = value;
 }
 
 void Memory::writeHalfWord(Address addr, uint16 value) {
-    if (addr + 1 >= MEMORY_SIZE) {
+    size_t index = 0;
+    if (!translateAddress(addr, index) || index + 1 >= MEMORY_SIZE) {
         return;
     }
-    memory_[addr] = static_cast<uint8>(value & 0xFF);
-    memory_[addr + 1] = static_cast<uint8>((value >> 8) & 0xFF);
+    memory_[index] = static_cast<uint8>(value & 0xFF);
+    memory_[index + 1] = static_cast<uint8>((value >> 8) & 0xFF);
 }
 
 void Memory::writeWord(Address addr, uint32 value) {
-    if (addr + 3 >= MEMORY_SIZE) {
+    size_t index = 0;
+    if (!translateAddress(addr, index) || index + 3 >= MEMORY_SIZE) {
         return;
     }
-    memory_[addr] = static_cast<uint8>(value & 0xFF);
-    memory_[addr + 1] = static_cast<uint8>((value >> 8) & 0xFF);
-    memory_[addr + 2] = static_cast<uint8>((value >> 16) & 0xFF);
-    memory_[addr + 3] = static_cast<uint8>((value >> 24) & 0xFF);
+    memory_[index] = static_cast<uint8>(value & 0xFF);
+    memory_[index + 1] = static_cast<uint8>((value >> 8) & 0xFF);
+    memory_[index + 2] = static_cast<uint8>((value >> 16) & 0xFF);
+    memory_[index + 3] = static_cast<uint8>((value >> 24) & 0xFF);
 }
 
 void Memory::loadBinary(const std::vector<uint8>& data, Address start_addr) {
@@ -99,7 +105,24 @@ MemorySegment Memory::getSegment(Address addr) const {
 }
 
 bool Memory::isAddressValid(Address addr) const {
-    return addr < MEMORY_SIZE;
+    size_t index = 0;
+    return translateAddress(addr, index);
+}
+
+bool Memory::translateAddress(Address addr, size_t& index) const {
+    if (addr < MEMORY_SIZE) {
+        index = static_cast<size_t>(addr);
+        return true;
+    }
+
+    const uint64 base = constants::RISCV_TEST_BASE;
+    const uint64 current = addr;
+    if (current >= base && current < base + MEMORY_SIZE) {
+        index = static_cast<size_t>(current - base);
+        return true;
+    }
+
+    return false;
 }
 
 std::string Memory::segmentToString(MemorySegment seg) {

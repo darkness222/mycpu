@@ -1,16 +1,13 @@
 CMakeFiles/myCPU.dir/src/main.cpp.obj: D:\study\ripes\mycpu\src\main.cpp \
- D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/iostream \
+ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/chrono \
+ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/ratio \
+ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/type_traits \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32/bits/c++config.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32/bits/os_defines.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32/bits/cpu_defines.h \
- D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/ostream \
- D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/ios \
- D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/iosfwd \
- D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/stringfwd.h \
- D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/memoryfwd.h \
- D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/postypes.h \
- D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/cwchar \
- D:/mingw64/x86_64-w64-mingw32/include/wchar.h \
+ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/cstdint \
+ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/stdint.h \
+ D:/mingw64/x86_64-w64-mingw32/include/stdint.h \
  D:/mingw64/x86_64-w64-mingw32/include/crtdefs.h \
  D:/mingw64/x86_64-w64-mingw32/include/_mingw.h \
  D:/mingw64/x86_64-w64-mingw32/include/_mingw_mac.h \
@@ -18,6 +15,25 @@ CMakeFiles/myCPU.dir/src/main.cpp.obj: D:\study\ripes\mycpu\src\main.cpp \
  D:/mingw64/x86_64-w64-mingw32/include/vadefs.h \
  D:/mingw64/x86_64-w64-mingw32/include/sdks/_mingw_directx.h \
  D:/mingw64/x86_64-w64-mingw32/include/sdks/_mingw_ddk.h \
+ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/stddef.h \
+ D:/mingw64/x86_64-w64-mingw32/include/stddef.h \
+ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/limits \
+ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/ctime \
+ D:/mingw64/x86_64-w64-mingw32/include/time.h \
+ D:/mingw64/x86_64-w64-mingw32/include/_timeval.h \
+ D:/mingw64/x86_64-w64-mingw32/include/sys/timeb.h \
+ D:/mingw64/x86_64-w64-mingw32/include/sec_api/sys/timeb_s.h \
+ D:/mingw64/x86_64-w64-mingw32/include/pthread_time.h \
+ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/parse_numbers.h \
+ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/fstream \
+ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/istream \
+ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/ios \
+ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/iosfwd \
+ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/stringfwd.h \
+ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/memoryfwd.h \
+ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/postypes.h \
+ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/cwchar \
+ D:/mingw64/x86_64-w64-mingw32/include/wchar.h \
  D:/mingw64/x86_64-w64-mingw32/include/_mingw_print_push.h \
  D:/mingw64/x86_64-w64-mingw32/include/_mingw_off_t.h \
  D:/mingw64/x86_64-w64-mingw32/include/_mingw_stat64.h \
@@ -29,15 +45,12 @@ CMakeFiles/myCPU.dir/src/main.cpp.obj: D:\study\ripes\mycpu\src\main.cpp \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/exception_ptr.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/exception_defines.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/cxxabi_init_exception.h \
- D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/stddef.h \
- D:/mingw64/x86_64-w64-mingw32/include/stddef.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/typeinfo \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/hash_bytes.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/new \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/nested_exception.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/move.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/concept_check.h \
- D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/type_traits \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/char_traits.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/stl_algobase.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/functexcept.h \
@@ -52,9 +65,6 @@ CMakeFiles/myCPU.dir/src/main.cpp.obj: D:\study\ripes\mycpu\src\main.cpp \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/ptr_traits.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/debug/debug.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/predefined_ops.h \
- D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/cstdint \
- D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/stdint.h \
- D:/mingw64/x86_64-w64-mingw32/include/stdint.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/localefwd.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32/bits/c++locale.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/clocale \
@@ -77,8 +87,6 @@ CMakeFiles/myCPU.dir/src/main.cpp.obj: D:\study\ripes\mycpu\src\main.cpp \
  D:/mingw64/x86_64-w64-mingw32/include/limits.h \
  D:/mingw64/x86_64-w64-mingw32/include/signal.h \
  D:/mingw64/x86_64-w64-mingw32/include/pthread_signal.h \
- D:/mingw64/x86_64-w64-mingw32/include/sys/timeb.h \
- D:/mingw64/x86_64-w64-mingw32/include/sec_api/sys/timeb_s.h \
  D:/mingw64/x86_64-w64-mingw32/include/pthread_compat.h \
  D:/mingw64/x86_64-w64-mingw32/include/pthread_unistd.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32/bits/atomic_word.h \
@@ -97,7 +105,6 @@ CMakeFiles/myCPU.dir/src/main.cpp.obj: D:\study\ripes\mycpu\src\main.cpp \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/ext/alloc_traits.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/alloc_traits.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/string_view \
- D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/limits \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/functional_hash.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/string_view.tcc \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/ext/string_conversions.h \
@@ -125,9 +132,14 @@ CMakeFiles/myCPU.dir/src/main.cpp.obj: D:\study\ripes\mycpu\src\main.cpp \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32/bits/ctype_inline.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/locale_facets.tcc \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/basic_ios.tcc \
+ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/ostream \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/ostream.tcc \
- D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/istream \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/istream.tcc \
+ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/codecvt.h \
+ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32/bits/basic_file.h \
+ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32/bits/c++io.h \
+ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/fstream.tcc \
+ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/iostream \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/memory \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/stl_construct.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/stl_uninitialized.h \
@@ -150,19 +162,12 @@ CMakeFiles/myCPU.dir/src/main.cpp.obj: D:\study\ripes\mycpu\src\main.cpp \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/atomic_base.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/atomic_lockfree_defines.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/backward/auto_ptr.h \
+ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/thread \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/vector \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/stl_vector.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/stl_bvector.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/vector.tcc \
- D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/thread \
- D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/chrono \
- D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/ratio \
- D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/ctime \
- D:/mingw64/x86_64-w64-mingw32/include/time.h \
- D:/mingw64/x86_64-w64-mingw32/include/_timeval.h \
- D:/mingw64/x86_64-w64-mingw32/include/pthread_time.h \
- D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/parse_numbers.h \
- D:\study\ripes\mycpu\src\rpc/RpcServer.h \
+ D:\study\ripes\mycpu\src\assembler/Assembler.h \
  D:/study/ripes/mycpu/include/Types.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/sstream \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/sstream.tcc \
@@ -173,20 +178,20 @@ CMakeFiles/myCPU.dir/src/main.cpp.obj: D:\study\ripes\mycpu\src\main.cpp \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/optional \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/enable_special_members.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/unordered_map.h \
+ D:\study\ripes\mycpu\src\bus/Bus.h \
+ D:/study/ripes/mycpu/include/Constants.h \
+ D:\study\ripes\mycpu\src\cpu/CPU.h \
+ D:\study\ripes\mycpu\src\cpu/RegisterFile.h \
+ D:\study\ripes\mycpu\src\cpu/Decoder.h \
+ D:\study\ripes\mycpu\src\cpu/CsrFile.h \
+ D:\study\ripes\mycpu\src\cpu/TrapHandler.h \
+ D:\study\ripes\mycpu\src\devices/Device.h \
+ D:\study\ripes\mycpu\src\elf/ElfLoader.h \
+ D:\study\ripes\mycpu\src\memory/Memory.h \
+ D:\study\ripes\mycpu\src\rpc/RpcServer.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/functional \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/std_function.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/stl_algo.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/algorithmfwd.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/stl_heap.h \
- D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/uniform_int_dist.h \
- D:\study\ripes\mycpu\src\assembler/Assembler.h \
- D:\study\ripes\mycpu\src\cpu/CPU.h \
- D:\study\ripes\mycpu\src\cpu/RegisterFile.h \
- D:/study/ripes/mycpu/include/Constants.h \
- D:\study\ripes\mycpu\src\cpu/Decoder.h \
- D:\study\ripes\mycpu\src\cpu/CsrFile.h \
- D:\study\ripes\mycpu\src\cpu/TrapHandler.h \
- D:\study\ripes\mycpu\src\memory/Memory.h \
- D:\study\ripes\mycpu\src\bus/Bus.h \
- D:\study\ripes\mycpu\src\devices/Device.h \
- D:\study\ripes\mycpu\src\elf/ElfLoader.h
+ D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/uniform_int_dist.h

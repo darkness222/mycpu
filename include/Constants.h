@@ -7,8 +7,10 @@ namespace constants {
 
 // ===== 内存配置 =====
 constexpr uint32 MEMORY_BASE = 0x00000000;
-constexpr uint32 MEMORY_SIZE = 16 * 1024;      // 16KB
+constexpr uint32 MEMORY_SIZE = 256 * 1024;     // 256KB
 constexpr uint32 MEMORY_END = MEMORY_BASE + MEMORY_SIZE - 1;
+constexpr uint32 RISCV_TEST_BASE = 0x80000000;
+constexpr uint32 RISCV_TEST_TOHOST_FALLBACK = RISCV_TEST_BASE + 0x1000;
 
 // ===== 内存区域边界 =====
 constexpr uint32 TEXT_START = 0x00000000;

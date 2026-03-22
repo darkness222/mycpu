@@ -26,6 +26,7 @@ public:
     TrapHandler();
     void setMemory(std::shared_ptr<Memory> memory) { memory_ = memory; }
     void setBus(std::shared_ptr<Bus> bus) { bus_ = bus; }
+    void setCsr(CsrFile* csr) { csr_ = csr; }
 
     // ===== 异常处理 =====
     // 取指地址未对齐 (JAL/分支目标非4字节对齐)
@@ -83,7 +84,7 @@ public:
 private:
     std::shared_ptr<Memory> memory_;
     std::shared_ptr<Bus> bus_;
-    CsrFile csr_;
+    CsrFile* csr_ = nullptr;
 
     TrapInfo current_trap_;
     std::string last_trap_info_;

@@ -16,13 +16,19 @@ CPU::CPU()
     , current_stage_(PipelineStage::FETCH)
     , exec_mode_(ExecMode::ASSEMBLY)
     , branch_taken_(false)
-    , branch_target_(0) {
+    , branch_target_(0)
+    , test_finished_(false)
+    , test_passed_(false)
+    , test_code_(0)
+    , tohost_address_(0) {
     registers_.reset();
+    trap_handler_.setCsr(&csr_);
 }
 
 CPU::~CPU() {}
 
 void CPU::reset() {
+    trap_handler_.setCsr(&csr_);
     pc_ = constants::RESET_VECTOR;
     state_ = CpuState::RUNNING;
     current_stage_ = PipelineStage::FETCH;
@@ -41,6 +47,10 @@ void CPU::reset() {
     fetch_instruction_ = 0;
     branch_taken_ = false;
     branch_target_ = 0;
+    test_finished_ = false;
+    test_passed_ = false;
+    test_code_ = 0;
+    tohost_address_ = 0;
 }
 
 bool CPU::loadElf(const std::vector<uint8>& elf_data) {
@@ -69,6 +79,10 @@ bool CPU::loadElf(const std::vector<uint8>& elf_data) {
     pc_ = result.entry_point;
     state_ = CpuState::RUNNING;
     exec_mode_ = ExecMode::ELF;
+    tohost_address_ = loader.getSectionAddress(".tohost");
+    if (tohost_address_ == 0) {
+        tohost_address_ = constants::RISCV_TEST_TOHOST_FALLBACK;
+    }
 
     // 设置栈指针
     registers_.write(constants::REG_SP, constants::DEFAULT_STACK_POINTER);
@@ -165,6 +179,12 @@ void CPU::run(uint64 cycles) {
 
 void CPU::fetch() {
     if (!memory_) return;
+    if (exec_mode_ == ExecMode::ELF && pc_ < constants::RISCV_TEST_BASE) {
+        std::ostringstream warn;
+        warn << "[WARN] PC dropped below official ELF base: 0x" << std::hex << pc_;
+        trace_.push_back(warn.str());
+        pc_ += constants::RISCV_TEST_BASE;
+    }
 
     // ===== 处理 Flush（来自hazard检测或分支跳转）=====
     if (hazard_signals_.flush) {
@@ -354,6 +374,9 @@ void CPU::execute() {
             }
             break;
 
+        case Opcode::FENCE:
+            break;
+
         case Opcode::HALT:
             state_ = CpuState::HALTED;
             trace_.push_back("[EX] 执行 HALT，处理器已停止");
@@ -430,6 +453,21 @@ void CPU::memoryAccess() {
             case constants::Funct3::SW:
                 memory_->writeWord(alu_result, static_cast<uint32>(write_data));
                 break;
+        }
+
+        if (exec_mode_ == ExecMode::ELF &&
+            tohost_address_ != 0 &&
+            static_cast<uint32>(alu_result) == tohost_address_ &&
+            static_cast<uint32>(write_data) != 0) {
+            test_finished_ = true;
+            test_code_ = static_cast<uint32>(write_data);
+            test_passed_ = (test_code_ == 1);
+            state_ = CpuState::HALTED;
+
+            std::ostringstream status;
+            status << "[TEST] tohost=0x" << std::hex << test_code_
+                   << (test_passed_ ? " PASS" : " FAIL");
+            trace_.push_back(status.str());
         }
     }
 
@@ -547,6 +585,13 @@ void CPU::handleTrap(const TrapInfo& trap) {
 }
 
 void CPU::handleEcallSyscall() {
+    if (exec_mode_ == ExecMode::ELF) {
+        TrapInfo trap = trap_handler_.handleEcall(pc_);
+        handleTrap(trap);
+        trace_.push_back("[SYSTEM] ecall - delegated to official trap vector");
+        return;
+    }
+
     TrapInfo trap = trap_handler_.handleEcall(pc_);
     handleTrap(trap);
     trace_.push_back("[SYSTEM] ecall - entering trap handler");
@@ -591,12 +636,17 @@ void CPU::handleEbreak() {
 }
 
 void CPU::handleMret() {
-    uint32 epc = trap_handler_.exitTrap();
+    uint32 epc = csr_.getMepc();
+    csr_.exitTrap();
     pc_ = epc;
     branch_taken_ = true;
     branch_target_ = epc;
     state_ = CpuState::RUNNING;
-    trace_.push_back("[SYSTEM] mret - returning from trap");
+    {
+        std::ostringstream oss;
+        oss << "[SYSTEM] mret - returning from trap to 0x" << std::hex << epc;
+        trace_.push_back(oss.str());
+    }
 
     // flush pipeline
     pipeline_regs_.if_id_valid = false;
@@ -635,18 +685,16 @@ void CPU::executeCsrInstruction(const Instruction& instr) {
             return;
     }
 
-    if (instr.funct3 == 0x1 || instr.funct3 >= 0x5) {
-        csr_.write(csr_addr, new_value);
-    } else {
-        csr_.csrrs(csr_addr, instr.rs1);
-    }
+    csr_.write(csr_addr, new_value);
 
     if (instr.rd != 0) {
         registers_.write(instr.rd, old_value);
     }
 
     std::ostringstream oss;
-    oss << "[CSR] " << std::hex << csr_addr << " = 0x" << new_value;
+    oss << "[CSR] " << std::hex << csr_addr
+        << " old=0x" << old_value
+        << " new=0x" << new_value;
     trace_.push_back(oss.str());
 }
 

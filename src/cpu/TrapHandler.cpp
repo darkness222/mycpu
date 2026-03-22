@@ -124,7 +124,7 @@ TrapInfo TrapHandler::handleEcall(uint32 pc) {
     trap.tval = 0;
 
     // 根据当前特权级决定 ecall 原因
-    switch (csr_.getPrivilegeMode()) {
+    switch (csr_->getPrivilegeMode()) {
         case PrivilegeMode::USER:
             trap.cause = Cause::ECALL_FROM_U;
             break;
@@ -138,7 +138,7 @@ TrapInfo TrapHandler::handleEcall(uint32 pc) {
     }
 
     std::ostringstream oss;
-    oss << "Exception: ECALL from " << static_cast<int>(csr_.getPrivilegeMode())
+    oss << "Exception: ECALL from " << static_cast<int>(csr_->getPrivilegeMode())
         << " at PC=0x" << std::hex << pc;
     logTrap(oss.str());
     return trap;
@@ -179,14 +179,14 @@ TrapInfo TrapHandler::handleStorePageFault(uint32 addr, uint32 pc) {
 // ===== 中断处理 =====
 
 bool TrapHandler::hasPendingInterrupt() const {
-    return csr_.hasPendingInterrupt();
+    return csr_->hasPendingInterrupt();
 }
 
 TrapInfo TrapHandler::getPendingInterrupt(uint32 pc) {
     TrapInfo trap;
     trap.is_interrupt = true;
     trap.epc = pc;
-    trap.cause = csr_.getHighestPriorityPendingInterrupt();
+    trap.cause = csr_->getHighestPriorityPendingInterrupt();
     trap.tval = 0;
 
     if (trap.cause == Cause::MACHINE_SOFTWARE_INTERRUPT) {
@@ -206,8 +206,8 @@ void TrapHandler::raiseInterrupt(uint32 cause) {
     else if (cause == Cause::MACHINE_TIMER_INTERRUPT) bit = 1 << 7;
     else if (cause == Cause::MACHINE_EXTERNAL_INTERRUPT) bit = 1 << 11;
 
-    uint32 mip = csr_.read(CSR::MIP);
-    csr_.write(CSR::MIP, mip | bit);
+    uint32 mip = csr_->read(CSR::MIP);
+    csr_->write(CSR::MIP, mip | bit);
 }
 
 bool TrapHandler::isInterruptPending(uint32 cause) const {
@@ -216,7 +216,7 @@ bool TrapHandler::isInterruptPending(uint32 cause) const {
     else if (cause == Cause::MACHINE_TIMER_INTERRUPT) bit = 1 << 7;
     else if (cause == Cause::MACHINE_EXTERNAL_INTERRUPT) bit = 1 << 11;
 
-    uint32 mip = csr_.read(CSR::MIP);
+    uint32 mip = csr_->read(CSR::MIP);
     return (mip & bit) != 0;
 }
 
@@ -226,34 +226,35 @@ void TrapHandler::clearInterrupt(uint32 cause) {
     else if (cause == Cause::MACHINE_TIMER_INTERRUPT) bit = 1 << 7;
     else if (cause == Cause::MACHINE_EXTERNAL_INTERRUPT) bit = 1 << 11;
 
-    uint32 mip = csr_.read(CSR::MIP);
-    csr_.write(CSR::MIP, mip & ~bit);
+    uint32 mip = csr_->read(CSR::MIP);
+    csr_->write(CSR::MIP, mip & ~bit);
 }
 
 // ===== Trap 入口/返回 =====
 
 void TrapHandler::enterTrap(const TrapInfo& trap) {
     current_trap_ = trap;
-    csr_.enterTrap(trap.cause, trap.epc, trap.tval);
+    csr_->enterTrap(trap.cause, trap.epc, trap.tval);
 }
 
 uint32 TrapHandler::exitTrap() {
-    uint32 mepc = csr_.getMepc();
-    csr_.exitTrap();
+    uint32 mepc = csr_->getMepc();
+    csr_->exitTrap();
     return mepc;
 }
 
 uint32 TrapHandler::calculateTrapVector(uint32 cause) const {
-    uint32 base = csr_.getMtvec();
-    bool vectored = trap_vectored_ && (base & 0x1) == 0;
+    uint32 mtvec = csr_->getMtvec();
+    uint32 mode = mtvec & 0x3;
+    uint32 base = mtvec & ~0x3u;
+    bool is_interrupt = (cause & Cause::INTERRUPT_MASK) != 0;
 
-    if (vectored && !((cause & Cause::INTERRUPT_MASK) == 0)) {
+    if (trap_vectored_ && mode == 1 && is_interrupt) {
         // 向量模式：base + 4 * cause
-        return (base & ~0xFF) + ((cause & ~Cause::INTERRUPT_MASK) * 4);
-    } else {
-        // 非向量模式：直接跳到 base
-        return base & ~0x3F;
+        return base + ((cause & ~Cause::INTERRUPT_MASK) * 4);
     }
+        // 非向量模式：直接跳到 base
+    return base;
 }
 
 } // namespace mycpu
