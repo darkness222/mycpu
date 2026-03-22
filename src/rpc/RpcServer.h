@@ -17,7 +17,7 @@ class CPU;
 
 class RpcServer {
 public:
-    RpcServer(uint16 port = 8080);
+    RpcServer(uint16 port = 18080);
     ~RpcServer();
 
     void setSimulator(std::shared_ptr<Simulator> simulator);

@@ -124,7 +124,11 @@ void RpcServer::start() {
     server_addr.sin_addr.s_addr = INADDR_ANY;
 
     if (bind(server_socket, (sockaddr*)&server_addr, sizeof(server_addr)) == SOCKET_ERROR) {
-        std::cerr << "Bind failed" << std::endl;
+        std::cerr << "Bind failed on port " << port_;
+#ifdef _WIN32
+        std::cerr << " (WSA error " << WSAGetLastError() << ")";
+#endif
+        std::cerr << std::endl;
 #ifdef _WIN32
         closesocket(server_socket);
 #else

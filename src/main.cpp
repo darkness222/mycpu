@@ -18,10 +18,12 @@ using namespace mycpu;
 
 namespace {
 
+constexpr uint16 kDefaultServerPort = 18080;
+
 void printUsage() {
     std::cout << "Usage:\n"
               << "  myCPU\n"
-              << "  myCPU --server\n"
+              << "  myCPU --server [--port N]\n"
               << "  myCPU --elf <file> [--max-cycles N]\n";
 }
 
@@ -88,6 +90,7 @@ int main(int argc, char* argv[]) {
     bool elf_mode = false;
     std::string elf_path;
     uint64 max_cycles = 200000;
+    uint16 server_port = kDefaultServerPort;
 
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
@@ -98,6 +101,13 @@ int main(int argc, char* argv[]) {
             elf_path = argv[++i];
         } else if (arg == "--max-cycles" && i + 1 < argc) {
             max_cycles = std::stoull(argv[++i]);
+        } else if (arg == "--port" && i + 1 < argc) {
+            uint32 parsed_port = static_cast<uint32>(std::stoul(argv[++i]));
+            if (parsed_port > 65535) {
+                std::cerr << "Invalid port: " << parsed_port << std::endl;
+                return 1;
+            }
+            server_port = static_cast<uint16>(parsed_port);
         } else if (arg == "--help" || arg == "-h") {
             printUsage();
             return 0;
@@ -121,7 +131,7 @@ int main(int argc, char* argv[]) {
 
     if (server_mode) {
         auto simulator = std::make_shared<Simulator>();
-        RpcServer server(8080);
+        RpcServer server(server_port);
         server.setSimulator(simulator);
         server.start();
 

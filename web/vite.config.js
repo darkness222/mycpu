@@ -1,15 +1,17 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+const backendPort = Number(process.env.VITE_BACKEND_PORT || '18080')
+
 export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
-    open: false, // 禁用自动打开浏览器，由启动脚本控制
-    strictPort: false, // 如果端口被占用，尝试其他端口
+    open: false,
+    strictPort: false,
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        target: `http://localhost:${backendPort}`,
         changeOrigin: true,
       },
     },
