@@ -123,9 +123,11 @@ int main(int argc, char* argv[]) {
 
     auto uart = std::make_shared<UARTDevice>();
     auto timer = std::make_shared<TimerDevice>();
+    auto interrupt_controller = std::make_shared<InterruptControllerDevice>();
 
     bus->connectDevice(constants::UART_BASE, uart);
     bus->connectDevice(constants::TIMER_BASE, timer);
+    bus->connectDevice(constants::INTERRUPT_BASE, interrupt_controller);
 
     cpu->reset();
 

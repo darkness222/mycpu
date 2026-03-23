@@ -2,15 +2,18 @@
 #include <stdexcept>
 #include <cstring>
 #include <sstream>
+#include <algorithm>
 
 namespace mycpu {
 
 Memory::Memory() {
     memory_.fill(0);
+    paging_enabled_ = false;
 }
 
 void Memory::reset() {
     memory_.fill(0);
+    clearPageTable();
 }
 
 uint8 Memory::readByte(Address addr) const {
@@ -105,8 +108,100 @@ MemorySegment Memory::getSegment(Address addr) const {
 }
 
 bool Memory::isAddressValid(Address addr) const {
+    if (paging_enabled_) {
+        Address translated = 0;
+        bool page_fault = false;
+        return translateForAccess(addr, MemoryAccessType::LOAD, translated, page_fault);
+    }
+    return isPhysicalAddressValid(addr);
+}
+
+bool Memory::isPhysicalAddressValid(Address addr) const {
     size_t index = 0;
     return translateAddress(addr, index);
+}
+
+void Memory::enablePaging(bool enable) {
+    paging_enabled_ = enable;
+}
+
+void Memory::clearPageTable() {
+    page_table_.clear();
+    paging_enabled_ = false;
+}
+
+void Memory::mapPage(uint32 virtual_page, uint32 physical_page,
+                     bool readable, bool writable, bool executable) {
+    PageTableEntry entry;
+    entry.physical_page = physical_page;
+    entry.valid = true;
+    entry.readable = readable;
+    entry.writable = writable;
+    entry.executable = executable;
+    page_table_[virtual_page] = entry;
+}
+
+void Memory::identityMapRange(Address start, Address end,
+                              bool readable, bool writable, bool executable) {
+    const uint32 page_size = 4096;
+    const uint32 first_page = start / page_size;
+    const uint32 last_page = end / page_size;
+    for (uint32 page = first_page; page <= last_page; ++page) {
+        mapPage(page, page, readable, writable, executable);
+    }
+}
+
+bool Memory::translateForAccess(Address addr, MemoryAccessType access, Address& translated_addr, bool& page_fault) const {
+    page_fault = false;
+
+    if (!paging_enabled_) {
+        translated_addr = addr;
+        if (addr >= constants::MMIO_BASE) {
+            return true;
+        }
+        return isPhysicalAddressValid(addr);
+    }
+
+    const uint32 page_size = 4096;
+    const uint32 virtual_page = addr / page_size;
+    const uint32 offset = addr % page_size;
+    auto it = page_table_.find(virtual_page);
+    if (it == page_table_.end() || !it->second.valid) {
+        page_fault = true;
+        return false;
+    }
+
+    const PageTableEntry& entry = it->second;
+    bool permitted = false;
+    switch (access) {
+        case MemoryAccessType::FETCH:
+            permitted = entry.executable;
+            break;
+        case MemoryAccessType::LOAD:
+            permitted = entry.readable;
+            break;
+        case MemoryAccessType::STORE:
+            permitted = entry.writable;
+            break;
+    }
+
+    if (!permitted) {
+        page_fault = true;
+        return false;
+    }
+
+    translated_addr = entry.physical_page * page_size + offset;
+    if (translated_addr >= constants::MMIO_BASE) {
+        return true;
+    }
+    return isPhysicalAddressValid(translated_addr);
+}
+
+std::vector<std::pair<uint32, PageTableEntry>> Memory::getPageTableSnapshot() const {
+    std::vector<std::pair<uint32, PageTableEntry>> mappings(page_table_.begin(), page_table_.end());
+    std::sort(mappings.begin(), mappings.end(),
+              [](const auto& lhs, const auto& rhs) { return lhs.first < rhs.first; });
+    return mappings;
 }
 
 bool Memory::translateAddress(Address addr, size_t& index) const {

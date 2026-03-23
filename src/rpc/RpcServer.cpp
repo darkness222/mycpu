@@ -568,16 +568,47 @@ Simulator::Simulator() {
 
     auto uart = std::make_shared<UARTDevice>();
     auto timer = std::make_shared<TimerDevice>();
+    auto interrupt_controller = std::make_shared<InterruptControllerDevice>();
 
     bus_->connectDevice(constants::UART_BASE, uart);
     bus_->connectDevice(constants::TIMER_BASE, timer);
+    bus_->connectDevice(constants::INTERRUPT_BASE, interrupt_controller);
 
     reset();
 }
 
 void Simulator::reset() {
     memory_->reset();
+    bus_->reset();
     cpu_->reset();
+
+    if (suppress_reload_on_reset_) {
+        return;
+    }
+
+    switch (loaded_program_kind_) {
+        case LoadedProgramKind::ASSEMBLY:
+            if (!loaded_instructions_.empty()) {
+                memory_->identityMapRange(constants::TEXT_START, constants::MEMORY_END);
+                memory_->identityMapRange(constants::MMIO_BASE, constants::MMIO_BASE + 0xFFF);
+                memory_->enablePaging(true);
+                cpu_->loadProgram(loaded_instructions_, loaded_start_address_);
+            }
+            break;
+        case LoadedProgramKind::BINARY:
+            if (!loaded_instructions_.empty()) {
+                cpu_->loadBinary(loaded_instructions_, loaded_start_address_);
+            }
+            break;
+        case LoadedProgramKind::ELF:
+            if (!loaded_elf_.empty()) {
+                cpu_->loadElf(loaded_elf_);
+            }
+            break;
+        case LoadedProgramKind::NONE:
+        default:
+            break;
+    }
 }
 
 void Simulator::step() {
@@ -594,15 +625,38 @@ void Simulator::stepInstruction() {
 }
 
 void Simulator::loadProgram(const std::vector<uint32>& program, uint32 start_address) {
-    cpu_->loadProgram(program, start_address);
+    loaded_program_kind_ = LoadedProgramKind::ASSEMBLY;
     loaded_instructions_ = program;
+    loaded_start_address_ = start_address;
+    loaded_elf_.clear();
+    suppress_reload_on_reset_ = true;
+    reset();
+    suppress_reload_on_reset_ = false;
+    memory_->identityMapRange(constants::TEXT_START, constants::MEMORY_END);
+    memory_->identityMapRange(constants::MMIO_BASE, constants::MMIO_BASE + 0xFFF);
+    memory_->enablePaging(true);
+    cpu_->loadProgram(program, start_address);
 }
 
 void Simulator::loadBinary(const std::vector<uint32>& program, uint32 start_address) {
+    loaded_program_kind_ = LoadedProgramKind::BINARY;
+    loaded_instructions_ = program;
+    loaded_start_address_ = start_address;
+    loaded_elf_.clear();
+    suppress_reload_on_reset_ = true;
+    reset();
+    suppress_reload_on_reset_ = false;
     cpu_->loadBinary(program, start_address);
 }
 
 bool Simulator::loadElf(const std::vector<uint8>& elf_data) {
+    loaded_program_kind_ = LoadedProgramKind::ELF;
+    loaded_elf_ = elf_data;
+    loaded_instructions_.clear();
+    loaded_start_address_ = 0;
+    suppress_reload_on_reset_ = true;
+    reset();
+    suppress_reload_on_reset_ = false;
     return cpu_->loadElf(elf_data);
 }
 

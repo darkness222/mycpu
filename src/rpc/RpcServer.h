@@ -60,10 +60,21 @@ public:
     std::string toJson() const;
 
 private:
+    enum class LoadedProgramKind {
+        NONE,
+        ASSEMBLY,
+        BINARY,
+        ELF
+    };
+
     std::shared_ptr<Memory> memory_;
     std::shared_ptr<Bus> bus_;
     std::shared_ptr<CPU> cpu_;
     std::vector<uint32> loaded_instructions_;
+    std::vector<uint8> loaded_elf_;
+    uint32 loaded_start_address_ = 0;
+    LoadedProgramKind loaded_program_kind_ = LoadedProgramKind::NONE;
+    bool suppress_reload_on_reset_ = false;
 };
 
 } // namespace mycpu

@@ -5,6 +5,7 @@
 #include "Decoder.h"
 #include "CsrFile.h"
 #include "TrapHandler.h"
+#include "../memory/Memory.h"
 #include <memory>
 #include <vector>
 #include <string>
@@ -83,6 +84,9 @@ private:
     void handleEcallSyscall();
     void handleEbreak();
     void handleMret();
+    void syncPeripheralState();
+    bool resolveMemoryAccess(uint32 addr, MemoryAccessType access, uint8 size,
+                             uint32 pc, uint32& translated_addr);
 
     // ===== CSR 指令执行 =====
     void executeCsrInstruction(const Instruction& instr);

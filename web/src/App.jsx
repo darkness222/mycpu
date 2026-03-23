@@ -20,33 +20,26 @@ const MEMORY_SEGMENTS = [
   { name: 'STACK', start: 0x2000, end: 0x3fff },
 ];
 
-const DEFAULT_PROGRAM = `; myCPU RISC-V 示例程序
-; 支持 lui, auipc, jal, jalr, add, sub, addi, and, or, xor, slt, slti
-;      beq, bne, blt, bge, lw, sw, li, ecall, ebreak, halt
+const DEMO_PROGRAM = `; myCPU 演示程序
+; 这个样例会同时访问寄存器、栈、数据段和 UART
 
-; ===== 基础运算 =====
 li x1, 5
-li x2, 7
-add x3, x1, x2
-sub x4, x3, x1
-addi x5, x4, 3
+li x3, 12
+add x5, x1, x3
 
-; ===== 逻辑运算 =====
-and x6, x1, x2
-or x7, x1, x2
-xor x8, x1, x2
+addi x2, x2, -4
+sw x5, 0(x2)
+lw x6, 0(x2)
 
-; ===== 数据段访问 =====
-sw x3, 0x100
+sw x6, 0x100
 lw x9, 0x100
 
-; ===== 分支跳转 =====
-loop:
-beq x10, x5, done
-addi x10, x10, 1
-beq x0, x0, loop
+lui x10, 0x10000
+li x11, 72
+sw x11, 0(x10)
+li x11, 105
+sw x11, 0(x10)
 
-done:
 halt`;
 
 async function fetchJson(path, options) {
@@ -58,41 +51,21 @@ async function fetchJson(path, options) {
   return data;
 }
 
-async function apiAssemble(source) {
-  return fetchJson('/assemble', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ source }),
-  });
-}
+const apiAssemble = (source) => fetchJson('/assemble', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ source }),
+});
 
-async function apiGetState() {
-  return fetchJson('/get_state');
-}
-
-async function apiStep() {
-  return fetchJson('/step', { method: 'POST' });
-}
-
-async function apiStepInstruction() {
-  return fetchJson('/step_instruction', { method: 'POST' });
-}
-
-async function apiReset() {
-  return fetchJson('/reset', { method: 'POST' });
-}
-
-async function apiGetInstructions() {
-  return fetchJson('/get_instructions');
-}
+const apiGetState = () => fetchJson('/get_state');
+const apiStep = () => fetchJson('/step', { method: 'POST' });
+const apiStepInstruction = () => fetchJson('/step_instruction', { method: 'POST' });
+const apiReset = () => fetchJson('/reset', { method: 'POST' });
+const apiGetInstructions = () => fetchJson('/get_instructions');
 
 function hex(value, width = 4) {
   const normalized = Number(value ?? 0) >>> 0;
   return `0x${normalized.toString(16).toUpperCase().padStart(width, '0')}`;
-}
-
-function formatSigned(value) {
-  return String((Number(value ?? 0) << 0) >> 0);
 }
 
 function alignWord(addr) {
@@ -141,19 +114,52 @@ function stageStatus(sim) {
   return STAGES[sim.stageIndex] || 'RUNNING';
 }
 
+function getActiveInstructionIndex(sim) {
+  if (sim.halted) {
+    return sim.stageIndex === 0
+      ? Math.max(0, sim.pcInstructionIndex)
+      : Math.max(0, sim.pcInstructionIndex - 1);
+  }
+
+  if (sim.stageIndex === 0) {
+    return sim.pcInstructionIndex;
+  }
+
+  return Math.max(0, sim.pcInstructionIndex - 1);
+}
+
+function createEmptySimState() {
+  return {
+    pc: 0,
+    pcInstructionIndex: 0,
+    cycle: 0,
+    halted: true,
+    stageIndex: 0,
+    registers: Object.fromEntries(REGISTER_NAMES.map((name) => [name, 0])),
+    memory: {},
+    pipelineLatches: { ifid: null, idex: null, exmem: null, memwb: null },
+    flowSignals: { stall: false, flush: false, forwarding: [], notes: [] },
+    bubble: { active: false, stage: '', reason: '' },
+    trace: [],
+    stats: { cycles: 0, instructions: 0, stalls: 0 },
+    peripherals: { uart: '无', timer: '0', trap: '无', irq: '无' },
+  };
+}
+
 function fromBackendState(state) {
   const registers = Object.fromEntries(REGISTER_NAMES.map((name) => [name, 0]));
   if (Array.isArray(state.registers)) {
     state.registers.forEach((value, index) => {
-      registers[`x${index}`] = value | 0;
+      registers[`x${index}`] = Number(value ?? 0) | 0;
     });
   }
 
+  const backendState = String(state.state ?? '');
   return {
     pc: Number(state.pc ?? 0) >>> 0,
     pcInstructionIndex: Number(state.pcInstructionIndex ?? 0),
     cycle: Number(state.cycle ?? 0),
-    halted: state.state === 'HALTED',
+    halted: backendState === 'HALTED',
     stageIndex: Number(state.stageIndex ?? 0),
     registers,
     memory: Object.fromEntries(Object.entries(state.memory ?? {}).map(([k, v]) => [k, Number(v)])),
@@ -170,7 +176,7 @@ function fromBackendState(state) {
       notes: state.flowSignals?.notes ?? [],
     },
     bubble: state.bubble ?? { active: false, stage: '', reason: '' },
-    trace: state.trace ?? [],
+    trace: Array.isArray(state.trace) ? state.trace : [],
     stats: {
       cycles: Number(state.stats?.cycles ?? 0),
       instructions: Number(state.stats?.instructions ?? 0),
@@ -179,8 +185,14 @@ function fromBackendState(state) {
     peripherals: {
       uart: state.peripherals?.uart_buffer || '无',
       timer: String(state.peripherals?.timer_value ?? 0),
-      trap: state.state === 'EXCEPTION' ? '触发异常' : '无',
-      irq: state.peripherals?.timer_interrupt ? 'Timer IRQ' : '无',
+      trap: backendState === 'EXCEPTION' ? '触发异常' : '无',
+      irq: state.peripherals?.timer_interrupt
+        ? 'Timer IRQ'
+        : state.peripherals?.external_interrupt
+          ? 'External IRQ'
+          : state.peripherals?.software_interrupt
+            ? 'Software IRQ'
+            : '无',
     },
   };
 }
@@ -215,11 +227,11 @@ function DataPath({ stageIndex, currentText, latches, flowSignals, bubble }) {
   const arrowClass = (hasValue) => (hasValue ? 'bg-[#74c0fc]' : 'bg-white');
 
   const datapathSteps = [
-    { key: 'pc', title: 'PC / 指令存储器', body: currentText || '空闲', arrowAfter: 'ifid' },
-    { key: 'dec', title: '译码器', body: latches.ifid || '等待', arrowAfter: 'idex' },
-    { key: 'alu', title: '执行单元 / ALU', body: latches.idex || '等待', arrowAfter: 'exmem' },
-    { key: 'dm', title: '数据存储器', body: latches.exmem || '等待', arrowAfter: 'memwb' },
-    { key: 'wb', title: '写回阶段', body: latches.memwb || '等待', arrowAfter: null },
+    { key: 'pc', title: 'PC / 指令存储', body: currentText || '空闲', arrowAfter: 'ifid' },
+    { key: 'dec', title: '译码', body: latches.ifid || '等待', arrowAfter: 'idex' },
+    { key: 'alu', title: '执行 / ALU', body: latches.idex || '等待', arrowAfter: 'exmem' },
+    { key: 'dm', title: '访存', body: latches.exmem || '等待', arrowAfter: 'memwb' },
+    { key: 'wb', title: '写回', body: latches.memwb || '等待', arrowAfter: null },
   ];
 
   return (
@@ -290,23 +302,9 @@ function DataPath({ stageIndex, currentText, latches, flowSignals, bubble }) {
 }
 
 export default function App() {
-  const [programText, setProgramText] = useState(DEFAULT_PROGRAM);
+  const [programText, setProgramText] = useState(DEMO_PROGRAM);
   const [program, setProgram] = useState([]);
-  const [sim, setSim] = useState({
-    pc: 0,
-    pcInstructionIndex: 0,
-    cycle: 0,
-    halted: true,
-    stageIndex: 0,
-    registers: Object.fromEntries(REGISTER_NAMES.map((name) => [name, 0])),
-    memory: {},
-    pipelineLatches: { ifid: null, idex: null, exmem: null, memwb: null },
-    flowSignals: { stall: false, flush: false, forwarding: [], notes: [] },
-    bubble: { active: false, stage: '', reason: '' },
-    trace: [],
-    stats: { cycles: 0, instructions: 0, stalls: 0 },
-    peripherals: { uart: '无', timer: '0', trap: '无', irq: '无' },
-  });
+  const [sim, setSim] = useState(createEmptySimState);
   const [connected, setConnected] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [assembleError, setAssembleError] = useState('');
@@ -335,6 +333,7 @@ export default function App() {
 
     const tick = async () => {
       if (cancelled) return;
+
       try {
         const next = fromBackendState(await apiStep());
         if (cancelled) return;
@@ -352,11 +351,11 @@ export default function App() {
       }
 
       if (!cancelled) {
-        timeoutId = window.setTimeout(tick, 300);
+        timeoutId = window.setTimeout(tick, 250);
       }
     };
 
-    timeoutId = window.setTimeout(tick, 300);
+    timeoutId = window.setTimeout(tick, 250);
     return () => {
       cancelled = true;
       if (timeoutId !== null) window.clearTimeout(timeoutId);
@@ -404,13 +403,17 @@ export default function App() {
   const stepInstruction = useCallback(async () => {
     try {
       const state = await apiStepInstruction();
-      setSim(fromBackendState(state));
+      const next = fromBackendState(state);
+      setSim(next);
+      if (next.halted) {
+        setIsRunning(false);
+      }
     } catch (err) {
       setAssembleError(`单步指令失败: ${err.message}`);
     }
   }, []);
 
-  const currentPcIndex = sim.pcInstructionIndex;
+  const currentPcIndex = getActiveInstructionIndex(sim);
   const currentInstruction = program[currentPcIndex];
 
   const segmentSummaries = useMemo(
@@ -428,7 +431,7 @@ export default function App() {
           <div>
             <div className="mb-3 inline-flex items-center gap-2 border border-black bg-[#ffd43b] px-3 py-1 text-[0.68rem] font-bold tracking-[0.05em]">
               <span className={`inline-block h-2 w-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`} />
-              {connected ? '后端已连接' : '后端未连接'} / 纯可视化展示
+              {connected ? '后端已连接' : '后端未连接'} / 可视化展示
             </div>
             <h1 className="text-[2rem] font-bold leading-[1.08] tracking-[0.03em] md:text-[3rem]">
               myCPU 可视化执行实验台
@@ -469,7 +472,7 @@ export default function App() {
               <div className="border border-black bg-white px-3 py-2">li / add / sub / addi</div>
               <div className="border border-black bg-white px-3 py-2">lw / sw</div>
               <div className="border border-black bg-white px-3 py-2">beq / bne / blt / bge</div>
-              <div className="border border-black bg-white px-3 py-2">jal / jalr / lui / ecall</div>
+              <div className="border border-black bg-white px-3 py-2">jal / jalr / lui / ecall / halt</div>
             </div>
             {assembleError ? (
               <div className="mt-4 border-2 border-black bg-[#ffd43b] px-3 py-3 text-[0.74rem] font-semibold">
@@ -490,25 +493,6 @@ export default function App() {
               flowSignals={sim.flowSignals}
               bubble={sim.bubble}
             />
-            <div className="mt-5 grid gap-3 md:grid-cols-2">
-              <div className="border-2 border-black bg-white p-3 text-[0.72rem]">
-                <div className="font-bold tracking-[0.04em]">控制信号</div>
-                <div className="mt-2 space-y-2">
-                  {sim.flowSignals.notes.length
-                    ? sim.flowSignals.notes.map((item) => <div key={item} className="border border-black px-2 py-2">{item}</div>)
-                    : <div className="border border-black px-2 py-2">当前周期没有额外控制提示</div>}
-                </div>
-              </div>
-              <div className="border-2 border-black bg-white p-3 text-[0.72rem]">
-                <div className="font-bold tracking-[0.04em]">流水线锁存器</div>
-                <div className="mt-2 space-y-2">
-                  <div className="border border-black px-2 py-2">IF/ID: {sim.pipelineLatches.ifid || '空'}</div>
-                  <div className="border border-black px-2 py-2">ID/EX: {sim.pipelineLatches.idex || '空'}</div>
-                  <div className="border border-black px-2 py-2">EX/MEM: {sim.pipelineLatches.exmem || '空'}</div>
-                  <div className="border border-black px-2 py-2">MEM/WB: {sim.pipelineLatches.memwb || '空'}</div>
-                </div>
-              </div>
-            </div>
           </Panel>
 
           <Panel title="程序视图" badge={`${program.length} 条指令`}>
@@ -542,15 +526,14 @@ export default function App() {
             <div className="grid gap-2 md:grid-cols-2">
               {REGISTER_NAMES.map((name) => {
                 const value = name === 'x0' ? 0 : sim.registers[name];
-                const width = value === 0 ? 0 : Math.max(6, Math.min(100, Math.abs(value) * 4));
+                const magnitude = Math.min(100, Math.max(value === 0 ? 0 : 8, Math.abs(Number(value)) / 64));
                 return (
-                  <div key={name} className="grid grid-cols-[44px_minmax(90px,1fr)_112px_44px] items-center gap-2 border-2 border-black bg-white px-2 py-2 text-[0.72rem]">
+                  <div key={name} className="grid grid-cols-[44px_minmax(120px,1fr)_124px] items-center gap-3 border-2 border-black bg-white px-3 py-2 text-[0.72rem]">
                     <span className="font-bold tracking-[0.05em]">{name}</span>
                     <div className="h-3 overflow-hidden border border-black bg-[#f4efea] min-w-0">
-                      <div className="h-full bg-[#74c0fc]" style={{ width: `${width}%` }} />
+                      <div className="h-full bg-[#74c0fc]" style={{ width: `${magnitude}%` }} />
                     </div>
                     <span className="overflow-hidden text-ellipsis whitespace-nowrap text-[0.68rem] font-semibold">{hex(value, 8)}</span>
-                    <span className="overflow-hidden text-right text-[0.58rem] opacity-70">{formatSigned(value)}</span>
                   </div>
                 );
               })}
@@ -584,7 +567,7 @@ export default function App() {
                           <div key={addr} className={`grid grid-cols-[90px_1fr_auto_auto_auto] items-center gap-3 border-2 border-black px-3 py-3 text-[0.74rem] ${touched ? 'bg-white' : 'bg-[#f4efea]'}`}>
                             <span className="font-bold tracking-[0.04em]">{hex(addr, 4)}</span>
                             <div className="h-3 overflow-hidden border border-black bg-[#f4efea]">
-                              <div className={`h-full ${touched ? 'bg-black' : 'bg-[#74c0fc]'}`} style={{ width: `${Math.min(100, Math.abs(Number(value)) * 4)}%` }} />
+                              <div className={`h-full ${touched ? 'bg-black' : 'bg-[#74c0fc]'}`} style={{ width: `${Math.min(100, Math.max(Number(value) === 0 ? 0 : 8, Math.abs(Number(value)) / 64))}%` }} />
                             </div>
                             <span className="text-[0.62rem] font-bold tracking-[0.04em]">{segmentNameForAddress(addr)}</span>
                             <span className="font-semibold">{hex(Number(value), 8)}</span>

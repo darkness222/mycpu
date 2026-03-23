@@ -1,6 +1,7 @@
 #include "Bus.h"
 #include "../devices/Device.h"
 #include <algorithm>
+#include <memory>
 
 namespace mycpu {
 
@@ -34,6 +35,85 @@ void Bus::tick() {
     for (auto& device : devices_) {
         device->tick();
     }
+}
+
+bool Bus::hasPendingTimerInterrupt() const {
+    for (const auto& device : devices_) {
+        auto timer = std::dynamic_pointer_cast<TimerDevice>(device);
+        if (timer && timer->hasInterrupt()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void Bus::clearTimerInterrupt() {
+    for (const auto& device : devices_) {
+        auto timer = std::dynamic_pointer_cast<TimerDevice>(device);
+        if (timer) {
+            timer->clearInterrupt();
+        }
+    }
+}
+
+uint32 Bus::getTimerValue() const {
+    for (const auto& device : devices_) {
+        auto timer = std::dynamic_pointer_cast<TimerDevice>(device);
+        if (timer) {
+            return timer->getValue();
+        }
+    }
+    return 0;
+}
+
+std::string Bus::getUartBuffer() const {
+    for (const auto& device : devices_) {
+        auto uart = std::dynamic_pointer_cast<UARTDevice>(device);
+        if (uart) {
+            return uart->getBuffer();
+        }
+    }
+    return "";
+}
+
+bool Bus::hasPendingSoftwareInterrupt() const {
+    for (const auto& device : devices_) {
+        auto ic = std::dynamic_pointer_cast<InterruptControllerDevice>(device);
+        if (ic && ic->hasSoftwareInterrupt()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool Bus::hasPendingExternalInterrupt() const {
+    for (const auto& device : devices_) {
+        auto ic = std::dynamic_pointer_cast<InterruptControllerDevice>(device);
+        if (ic && ic->hasExternalInterrupt()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+uint32 Bus::getInterruptPendingBits() const {
+    for (const auto& device : devices_) {
+        auto ic = std::dynamic_pointer_cast<InterruptControllerDevice>(device);
+        if (ic) {
+            return ic->getPendingBits();
+        }
+    }
+    return 0;
+}
+
+uint32 Bus::getInterruptEnabledBits() const {
+    for (const auto& device : devices_) {
+        auto ic = std::dynamic_pointer_cast<InterruptControllerDevice>(device);
+        if (ic) {
+            return ic->getEnabledBits();
+        }
+    }
+    return 0;
 }
 
 uint32 Bus::mmio_read(Address addr, uint8 size) {

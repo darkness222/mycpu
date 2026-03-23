@@ -1,4 +1,4 @@
-#include "ElfLoader.h"
+﻿#include "ElfLoader.h"
 #include "../memory/Memory.h"
 #include "../bus/Bus.h"
 #include <cstring>
@@ -23,22 +23,22 @@ bool ElfLoader::loadFromBytes(const std::vector<uint8>& data) {
 }
 
 bool ElfLoader::parseHeader() {
-    // 检查 Magic Number
+    // 妫€鏌?Magic Number
     if (std::memcmp(elf_data_.data(), ElfConst::ELF_MAGIC, 4) != 0) {
         return false;
     }
 
-    // 检查 ELF Class (只支持 32-bit)
+    // 妫€鏌?ELF Class (鍙敮鎸?32-bit)
     if (elf_data_[4] != ElfConst::ELFCLASS32) {
         return false;
     }
 
-    // 检查 Endianness (只支持小端)
+    // 妫€鏌?Endianness (鍙敮鎸佸皬绔?
     if (elf_data_[5] != ElfConst::ELFDATA2LSB) {
         return false;
     }
 
-    // 检查机器架构
+    // 妫€鏌ユ満鍣ㄦ灦鏋?
     std::memcpy(&elf_header_, elf_data_.data(), sizeof(Elf32_Ehdr));
 
     if (elf_header_.e_machine != ElfConst::EM_RISCV) {
@@ -47,7 +47,7 @@ bool ElfLoader::parseHeader() {
     }
     is_riscv_ = true;
 
-    // 解析程序头
+    // 瑙ｆ瀽绋嬪簭澶?
     program_headers_.clear();
     if (elf_header_.e_phoff > 0 && elf_header_.e_phnum > 0) {
         for (uint16 i = 0; i < elf_header_.e_phnum; ++i) {
@@ -56,7 +56,7 @@ bool ElfLoader::parseHeader() {
             std::memcpy(&phdr, elf_data_.data() + offset, sizeof(Elf32_Phdr));
             program_headers_.push_back(phdr);
 
-            // 记录最大加载地址
+            // 璁板綍鏈€澶у姞杞藉湴鍧€
             uint32 end_addr = phdr.p_vaddr + phdr.p_memsz;
             if (end_addr > max_load_addr_) {
                 max_load_addr_ = end_addr;
@@ -126,7 +126,7 @@ ElfLoadResult ElfLoader::loadToMemory(std::shared_ptr<Memory> memory,
     result.entry_point = elf_header_.e_entry;
 
     for (const auto& phdr : program_headers_) {
-        // 只处理 PT_LOAD 段
+        // 鍙鐞?PT_LOAD 娈?
         if (phdr.p_type != ElfConst::PT_LOAD) {
             continue;
         }
@@ -135,30 +135,28 @@ ElfLoadResult ElfLoader::loadToMemory(std::shared_ptr<Memory> memory,
             continue;
         }
 
-        // 检查边界
+        // 妫€鏌ヨ竟鐣?
         if (phdr.p_offset + phdr.p_filesz > elf_data_.size()) {
             result.error_message = "Segment out of bounds";
             return result;
         }
 
-        // 加载数据到内存
+        // 鍔犺浇鏁版嵁鍒板唴瀛?
         uint32 vaddr = phdr.p_vaddr;
         uint32 memsz = phdr.p_memsz;
 
-        // 先清零 .bss 段
+        // 鍏堟竻闆?.bss 娈?
         if (phdr.p_filesz < phdr.p_memsz) {
             uint32 bss_start = vaddr + phdr.p_filesz;
             uint32 bss_size = memsz - phdr.p_filesz;
-            for (uint32 i = 0; i < bss_size; i += 4) {
-                memory->writeWord(bss_start + i, 0);
+            for (uint32 i = 0; i < bss_size; ++i) {
+                memory->writeByte(bss_start + i, 0);
             }
         }
 
-        // 复制文件数据到内存
-        for (uint32 i = 0; i < phdr.p_filesz; i += 4) {
-            uint32 word = 0;
-            std::memcpy(&word, elf_data_.data() + phdr.p_offset + i, 4);
-            memory->writeWord(vaddr + i, word);
+        // ?????????????????? 4 ??????????
+        for (uint32 i = 0; i < phdr.p_filesz; ++i) {
+            memory->writeByte(vaddr + i, elf_data_[phdr.p_offset + i]);
         }
 
         result.loaded_segments.push_back(vaddr);

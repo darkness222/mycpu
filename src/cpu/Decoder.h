@@ -20,6 +20,9 @@ private:
     int32 decodeImmediate(uint32 instruction, Opcode opcode);
 
     Opcode getOpcode(uint32 instruction) {
+        if (instruction == 0x000000FF) {
+            return Opcode::HALT;
+        }
         return static_cast<Opcode>(instruction & 0x7F);
     }
 

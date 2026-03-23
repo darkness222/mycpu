@@ -185,9 +185,9 @@ CMakeFiles/myCPU.dir/src/main.cpp.obj: D:\study\ripes\mycpu\src\main.cpp \
  D:\study\ripes\mycpu\src\cpu/Decoder.h \
  D:\study\ripes\mycpu\src\cpu/CsrFile.h \
  D:\study\ripes\mycpu\src\cpu/TrapHandler.h \
+ D:/study/ripes/mycpu/src/memory/Memory.h \
  D:\study\ripes\mycpu\src\devices/Device.h \
  D:\study\ripes\mycpu\src\elf/ElfLoader.h \
- D:\study\ripes\mycpu\src\memory/Memory.h \
  D:\study\ripes\mycpu\src\rpc/RpcServer.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/functional \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/std_function.h \

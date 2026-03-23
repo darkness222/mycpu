@@ -122,4 +122,48 @@ void TimerDevice::tick() {
     }
 }
 
+InterruptControllerDevice::InterruptControllerDevice()
+    : Device(constants::INTERRUPT_BASE, 0x10)
+    , pending_bits_(0)
+    , enabled_bits_((1u << 3) | (1u << 11)) {
+    reset();
+}
+
+void InterruptControllerDevice::reset() {
+    pending_bits_ = 0;
+    enabled_bits_ = (1u << 3) | (1u << 11);
+}
+
+uint32 InterruptControllerDevice::read(Address addr, uint8 size) {
+    (void)size;
+    uint32 offset = addr - constants::INTERRUPT_BASE;
+    switch (offset) {
+        case 0x00:
+            return pending_bits_;
+        case 0x04:
+            return enabled_bits_;
+        default:
+            return 0;
+    }
+}
+
+void InterruptControllerDevice::write(Address addr, uint32 value, uint8 size) {
+    (void)size;
+    uint32 offset = addr - constants::INTERRUPT_BASE;
+    switch (offset) {
+        case 0x04:
+            enabled_bits_ = value & ((1u << 3) | (1u << 11));
+            pending_bits_ &= enabled_bits_;
+            break;
+        case 0x08:
+            pending_bits_ |= value & enabled_bits_ & ((1u << 3) | (1u << 11));
+            break;
+        case 0x0C:
+            pending_bits_ &= ~(value & ((1u << 3) | (1u << 11)));
+            break;
+        default:
+            break;
+    }
+}
+
 } // namespace mycpu

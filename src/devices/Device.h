@@ -55,11 +55,31 @@ public:
 
     uint32 getValue() const { return counter_; }
     bool hasInterrupt() const { return interrupt_pending_; }
+    void clearInterrupt() { interrupt_pending_ = false; }
 
 private:
     uint32 counter_;
     uint32 compare_;
     bool interrupt_pending_;
+};
+
+class InterruptControllerDevice : public Device {
+public:
+    InterruptControllerDevice();
+    virtual ~InterruptControllerDevice() = default;
+
+    void reset() override;
+    uint32 read(Address addr, uint8 size) override;
+    void write(Address addr, uint32 value, uint8 size) override;
+
+    bool hasSoftwareInterrupt() const { return (pending_bits_ & (1u << 3)) != 0; }
+    bool hasExternalInterrupt() const { return (pending_bits_ & (1u << 11)) != 0; }
+    uint32 getPendingBits() const { return pending_bits_; }
+    uint32 getEnabledBits() const { return enabled_bits_; }
+
+private:
+    uint32 pending_bits_;
+    uint32 enabled_bits_;
 };
 
 } // namespace mycpu

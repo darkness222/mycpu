@@ -180,9 +180,37 @@ struct PeripheralState {
     bool timer_interrupt;
     bool uart_interrupt;
     bool external_interrupt;
+    bool software_interrupt;
+    uint32 interrupt_pending_bits;
+    uint32 interrupt_enabled_bits;
 
     PeripheralState() : timer_value(0), timer_interrupt(false),
-                         uart_interrupt(false), external_interrupt(false) {}
+                         uart_interrupt(false), external_interrupt(false),
+                         software_interrupt(false), interrupt_pending_bits(0),
+                         interrupt_enabled_bits(0) {}
+};
+
+struct MmuState {
+    bool paging_enabled;
+    uint32 mapped_pages;
+    std::vector<std::string> page_mappings;
+
+    MmuState() : paging_enabled(false), mapped_pages(0) {}
+};
+
+struct CsrState {
+    std::string privilege_mode;
+    uint32 mstatus;
+    uint32 mie;
+    uint32 mip;
+    uint32 mtvec;
+    uint32 mepc;
+    uint32 mcause;
+    uint32 mtval;
+
+    CsrState()
+        : privilege_mode("M"), mstatus(0), mie(0), mip(0), mtvec(0),
+          mepc(0), mcause(0), mtval(0) {}
 };
 
 // 模拟器状态（用于前端展示）
@@ -196,6 +224,8 @@ struct SimulatorState {
     CpuStats stats;
     HazardSignals hazard_signals;
     PeripheralState peripherals;
+    MmuState mmu;
+    CsrState csr;
     std::vector<std::string> execution_trace;
 
     // 已解码的流水线指令文本
@@ -322,6 +352,30 @@ inline std::string SimulatorState::toJson(const void* memory_ptr) const {
     oss << ",\"timer_interrupt\":" << (peripherals.timer_interrupt ? "true" : "false");
     oss << ",\"uart_interrupt\":" << (peripherals.uart_interrupt ? "true" : "false");
     oss << ",\"external_interrupt\":" << (peripherals.external_interrupt ? "true" : "false");
+    oss << ",\"software_interrupt\":" << (peripherals.software_interrupt ? "true" : "false");
+    oss << ",\"interrupt_pending_bits\":" << peripherals.interrupt_pending_bits;
+    oss << ",\"interrupt_enabled_bits\":" << peripherals.interrupt_enabled_bits;
+    oss << "}";
+
+    oss << ",\"mmu\":{";
+    oss << "\"paging_enabled\":" << (mmu.paging_enabled ? "true" : "false");
+    oss << ",\"mapped_pages\":" << mmu.mapped_pages;
+    oss << ",\"page_mappings\":[";
+    for (size_t i = 0; i < mmu.page_mappings.size(); ++i) {
+        if (i > 0) oss << ",";
+        oss << "\"" << json_esc(mmu.page_mappings[i]) << "\"";
+    }
+    oss << "]}";
+
+    oss << ",\"csr\":{";
+    oss << "\"privilege_mode\":\"" << json_esc(csr.privilege_mode) << "\"";
+    oss << ",\"mstatus\":" << csr.mstatus;
+    oss << ",\"mie\":" << csr.mie;
+    oss << ",\"mip\":" << csr.mip;
+    oss << ",\"mtvec\":" << csr.mtvec;
+    oss << ",\"mepc\":" << csr.mepc;
+    oss << ",\"mcause\":" << csr.mcause;
+    oss << ",\"mtval\":" << csr.mtval;
     oss << "}";
 
     // trace

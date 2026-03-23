@@ -42,6 +42,9 @@ void CPU::reset() {
     csr_.setPrivilegeMode(PrivilegeMode::MACHINE);
     csr_.write(CSR::MSTATUS, (static_cast<uint32>(PrivilegeMode::MACHINE) << 11));
     csr_.write(CSR::MTVEC, constants::TRAP_VECTOR);
+    csr_.write(CSR::MIE, (1u << 3) | (1u << 7) | (1u << 11));
+    csr_.enableInterrupts();
+    peripherals_ = PeripheralState();
 
     pipeline_regs_ = PipelineRegisters();
     fetch_instruction_ = 0;
@@ -140,6 +143,10 @@ void CPU::step() {
 
     stats_.cycle_count++;
     csr_.incrementCycle();
+    if (bus_) {
+        bus_->tick();
+    }
+    syncPeripheralState();
 
     // ===== 每周期检查中断 =====
     if (state_ == CpuState::RUNNING) {
@@ -167,6 +174,10 @@ void CPU::step() {
     }
 
     detectHazards();
+
+    if (state_ == CpuState::HALTED) {
+        return;
+    }
 
     current_stage_ = static_cast<PipelineStage>((static_cast<int>(current_stage_) + 1) % 5);
 }
@@ -202,7 +213,25 @@ void CPU::fetch() {
 
     // ===== 取指 =====
     // 注意：pc_由execute阶段更新（分支/跳转）或自动递增
-    fetch_instruction_ = memory_->readWord(pc_);
+    if ((pc_ & 0x3) != 0) {
+        TrapInfo trap = trap_handler_.handleInstructionAddressMisaligned(pc_, pc_);
+        handleTrap(trap);
+        return;
+    }
+
+    uint32 translated_pc = 0;
+    if (!resolveMemoryAccess(pc_, MemoryAccessType::FETCH, 4, pc_, translated_pc)) {
+        return;
+    }
+    bool fetch_from_mmio = translated_pc >= constants::MMIO_BASE &&
+                           translated_pc < (constants::MMIO_BASE + 0x1000);
+    if (fetch_from_mmio) {
+        TrapInfo trap = trap_handler_.handleInstructionAccessFault(pc_);
+        handleTrap(trap);
+        return;
+    }
+
+    fetch_instruction_ = memory_->readWord(translated_pc);
     Instruction instr = decoder_.decode(fetch_instruction_, pc_);
 
     // 填入 IF/ID 流水线寄存器
@@ -428,22 +457,52 @@ void CPU::memoryAccess() {
         return;
     }
 
+    uint32 translated_addr = 0;
+    uint8 access_size = 1;
+    if (instr.funct3 == constants::Funct3::LH || instr.funct3 == constants::Funct3::LHU ||
+        instr.funct3 == constants::Funct3::SH) {
+        access_size = 2;
+    } else if (instr.funct3 == constants::Funct3::LW || instr.funct3 == constants::Funct3::SW) {
+        access_size = 4;
+    }
+
+    if ((pipeline_regs_.ex_mem_mem_read || pipeline_regs_.ex_mem_mem_write) &&
+        !resolveMemoryAccess(static_cast<uint32>(alu_result),
+                             pipeline_regs_.ex_mem_mem_write ? MemoryAccessType::STORE : MemoryAccessType::LOAD,
+                             access_size,
+                             pipeline_regs_.ex_mem_pc,
+                             translated_addr)) {
+        pipeline_regs_.ex_mem_valid = false;
+        pipeline_regs_.mem_wb_valid = false;
+        return;
+    }
+
     if (pipeline_regs_.ex_mem_mem_read) {
         switch (instr.funct3) {
             case constants::Funct3::LB:
-                mem_data = static_cast<int32>(static_cast<int8>(memory_->readByte(alu_result)));
+                mem_data = (translated_addr >= constants::MMIO_BASE && translated_addr < (constants::MMIO_BASE + 0x1000))
+                    ? static_cast<int32>(static_cast<int8>(bus_->read(translated_addr, 1)))
+                    : static_cast<int32>(static_cast<int8>(memory_->readByte(translated_addr)));
                 break;
             case constants::Funct3::LH:
-                mem_data = static_cast<int32>(static_cast<int16>(memory_->readHalfWord(alu_result)));
+                mem_data = (translated_addr >= constants::MMIO_BASE && translated_addr < (constants::MMIO_BASE + 0x1000))
+                    ? static_cast<int32>(static_cast<int16>(bus_->read(translated_addr, 2)))
+                    : static_cast<int32>(static_cast<int16>(memory_->readHalfWord(translated_addr)));
                 break;
             case constants::Funct3::LW:
-                mem_data = static_cast<int32>(memory_->readWord(alu_result));
+                mem_data = (translated_addr >= constants::MMIO_BASE && translated_addr < (constants::MMIO_BASE + 0x1000))
+                    ? static_cast<int32>(bus_->read(translated_addr, 4))
+                    : static_cast<int32>(memory_->readWord(translated_addr));
                 break;
             case constants::Funct3::LBU:
-                mem_data = static_cast<int32>(memory_->readByte(alu_result));
+                mem_data = (translated_addr >= constants::MMIO_BASE && translated_addr < (constants::MMIO_BASE + 0x1000))
+                    ? static_cast<int32>(bus_->read(translated_addr, 1))
+                    : static_cast<int32>(memory_->readByte(translated_addr));
                 break;
             case constants::Funct3::LHU:
-                mem_data = static_cast<int32>(memory_->readHalfWord(alu_result));
+                mem_data = (translated_addr >= constants::MMIO_BASE && translated_addr < (constants::MMIO_BASE + 0x1000))
+                    ? static_cast<int32>(bus_->read(translated_addr, 2))
+                    : static_cast<int32>(memory_->readHalfWord(translated_addr));
                 break;
         }
         pipeline_regs_.mem_wb_mem_data = mem_data;
@@ -453,13 +512,16 @@ void CPU::memoryAccess() {
         int32 write_data = pipeline_regs_.ex_mem_mem_write_data;
         switch (instr.funct3) {
             case constants::Funct3::SB:
-                memory_->writeByte(alu_result, static_cast<uint8>(write_data & 0xFF));
+                if (translated_addr >= constants::MMIO_BASE && translated_addr < (constants::MMIO_BASE + 0x1000)) bus_->write(translated_addr, static_cast<uint32>(write_data & 0xFF), 1);
+                else memory_->writeByte(translated_addr, static_cast<uint8>(write_data & 0xFF));
                 break;
             case constants::Funct3::SH:
-                memory_->writeHalfWord(alu_result, static_cast<uint16>(write_data & 0xFFFF));
+                if (translated_addr >= constants::MMIO_BASE && translated_addr < (constants::MMIO_BASE + 0x1000)) bus_->write(translated_addr, static_cast<uint32>(write_data & 0xFFFF), 2);
+                else memory_->writeHalfWord(translated_addr, static_cast<uint16>(write_data & 0xFFFF));
                 break;
             case constants::Funct3::SW:
-                memory_->writeWord(alu_result, static_cast<uint32>(write_data));
+                if (translated_addr >= constants::MMIO_BASE && translated_addr < (constants::MMIO_BASE + 0x1000)) bus_->write(translated_addr, static_cast<uint32>(write_data), 4);
+                else memory_->writeWord(translated_addr, static_cast<uint32>(write_data));
                 break;
         }
 
@@ -661,6 +723,77 @@ void CPU::handleMret() {
     pipeline_regs_.id_ex_valid = false;
 }
 
+void CPU::syncPeripheralState() {
+    if (!bus_) {
+        return;
+    }
+
+    peripherals_.timer_value = bus_->getTimerValue();
+    peripherals_.uart_buffer = bus_->getUartBuffer();
+    peripherals_.timer_interrupt = bus_->hasPendingTimerInterrupt();
+    peripherals_.software_interrupt = bus_->hasPendingSoftwareInterrupt();
+    peripherals_.external_interrupt = bus_->hasPendingExternalInterrupt();
+    peripherals_.uart_interrupt = false;
+    peripherals_.interrupt_pending_bits = bus_->getInterruptPendingBits();
+    peripherals_.interrupt_enabled_bits = bus_->getInterruptEnabledBits();
+
+    if (peripherals_.timer_interrupt) {
+        trap_handler_.raiseInterrupt(Cause::MACHINE_TIMER_INTERRUPT);
+    } else {
+        trap_handler_.clearInterrupt(Cause::MACHINE_TIMER_INTERRUPT);
+    }
+
+    if (peripherals_.software_interrupt) {
+        trap_handler_.raiseInterrupt(Cause::MACHINE_SOFTWARE_INTERRUPT);
+    } else {
+        trap_handler_.clearInterrupt(Cause::MACHINE_SOFTWARE_INTERRUPT);
+    }
+
+    if (peripherals_.external_interrupt) {
+        trap_handler_.raiseInterrupt(Cause::MACHINE_EXTERNAL_INTERRUPT);
+    } else {
+        trap_handler_.clearInterrupt(Cause::MACHINE_EXTERNAL_INTERRUPT);
+    }
+}
+
+bool CPU::resolveMemoryAccess(uint32 addr, MemoryAccessType access, uint8 size,
+                              uint32 pc, uint32& translated_addr) {
+    if (!memory_) {
+        return false;
+    }
+
+    if ((size == 2 && (addr & 0x1)) || (size == 4 && (addr & 0x3))) {
+        if (access == MemoryAccessType::FETCH) {
+            TrapInfo trap = trap_handler_.handleInstructionAddressMisaligned(pc, addr);
+            handleTrap(trap);
+            return false;
+        }
+    }
+
+    bool page_fault = false;
+    if (memory_->translateForAccess(addr, access, translated_addr, page_fault)) {
+        return true;
+    }
+
+    TrapInfo trap;
+    if (page_fault) {
+        trap = (access == MemoryAccessType::STORE)
+            ? trap_handler_.handleStorePageFault(addr, pc)
+            : (access == MemoryAccessType::LOAD)
+                ? trap_handler_.handleLoadPageFault(addr, pc)
+                : trap_handler_.handleInstructionPageFault(addr, pc);
+    } else {
+        trap = (access == MemoryAccessType::STORE)
+            ? trap_handler_.handleStoreAccessFault(addr, pc)
+            : (access == MemoryAccessType::LOAD)
+                ? trap_handler_.handleLoadAccessFault(addr, pc)
+                : trap_handler_.handleInstructionAccessFault(pc);
+    }
+
+    handleTrap(trap);
+    return false;
+}
+
 void CPU::executeCsrInstruction(const Instruction& instr) {
     uint16 csr_addr = static_cast<uint16>(instr.imm & 0xFFF);
     uint32 old_value = csr_.read(csr_addr);
@@ -735,6 +868,16 @@ SimulatorState CPU::getSimulatorState() const {
     state.hazard_signals = hazard_signals_;
     state.peripherals = peripherals_;
     state.execution_trace = trace_;
+    state.csr.mstatus = csr_.getMstatus();
+    state.csr.mie = csr_.getMie();
+    state.csr.mip = csr_.getMip();
+    state.csr.mtvec = csr_.getMtvec();
+    state.csr.mepc = csr_.getMepc();
+    state.csr.mcause = csr_.getMcause();
+    state.csr.mtval = csr_.getMtval();
+    state.csr.privilege_mode =
+        csr_.getPrivilegeMode() == PrivilegeMode::MACHINE ? "M" :
+        csr_.getPrivilegeMode() == PrivilegeMode::SUPERVISOR ? "S" : "U";
 
     if (trace_.size() > 20) {
         state.execution_trace = std::vector<std::string>(
@@ -750,6 +893,20 @@ SimulatorState CPU::getSimulatorState() const {
     // 填充内存快照
     if (memory_) {
         state.memory_snapshot = memory_->getMemorySnapshot();
+        state.mmu.paging_enabled = memory_->isPagingEnabled();
+        state.mmu.mapped_pages = static_cast<uint32>(memory_->getMappedPageCount());
+        for (const auto& mapping : memory_->getPageTableSnapshot()) {
+            std::ostringstream page_desc;
+            page_desc << "VPN 0x" << std::hex << mapping.first
+                      << " -> PPN 0x" << mapping.second.physical_page
+                      << " [" << (mapping.second.readable ? 'R' : '-')
+                      << (mapping.second.writable ? 'W' : '-')
+                      << (mapping.second.executable ? 'X' : '-') << "]";
+            state.mmu.page_mappings.push_back(page_desc.str());
+            if (state.mmu.page_mappings.size() >= 8) {
+                break;
+            }
+        }
     }
 
     return state;

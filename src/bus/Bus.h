@@ -4,6 +4,7 @@
 #include "../include/Constants.h"
 #include <vector>
 #include <memory>
+#include <string>
 
 namespace mycpu {
 
@@ -22,6 +23,14 @@ public:
     void write(Address addr, uint32 value, uint8 size);
 
     void tick();
+    bool hasPendingTimerInterrupt() const;
+    void clearTimerInterrupt();
+    uint32 getTimerValue() const;
+    std::string getUartBuffer() const;
+    bool hasPendingSoftwareInterrupt() const;
+    bool hasPendingExternalInterrupt() const;
+    uint32 getInterruptPendingBits() const;
+    uint32 getInterruptEnabledBits() const;
 
 private:
     std::vector<std::shared_ptr<Device>> devices_;

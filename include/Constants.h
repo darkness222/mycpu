@@ -71,7 +71,7 @@ constexpr uint32 TRAP_VECTOR = 0x00000040;
 constexpr uint32 INTERRUPT_VECTOR = 0x00000080;
 
 // ===== 模拟器配置 =====
-constexpr uint32 DEFAULT_STACK_POINTER = STACK_END - 4;
+constexpr uint32 DEFAULT_STACK_POINTER = STACK_END & ~0x3u;
 constexpr uint32 DEFAULT_HEAP_POINTER = HEAP_START;
 constexpr int EXECUTION_DELAY_MS = 300;  // 单步执行延迟
 
