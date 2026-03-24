@@ -8,7 +8,9 @@
 
 #include "assembler/Assembler.h"
 #include "bus/Bus.h"
+#include "cpu/CpuCore.h"
 #include "cpu/CPU.h"
+#include "cpu/PipelinedCPU.h"
 #include "devices/Device.h"
 #include "elf/ElfLoader.h"
 #include "memory/Memory.h"
@@ -20,11 +22,18 @@ namespace {
 
 constexpr uint16 kDefaultServerPort = 18080;
 
+SimulationMode parseMode(const std::string& mode_text) {
+    if (mode_text == "pipelined" || mode_text == "pipeline" || mode_text == "PIPELINED") {
+        return SimulationMode::PIPELINED;
+    }
+    return SimulationMode::MULTI_CYCLE;
+}
+
 void printUsage() {
     std::cout << "Usage:\n"
               << "  myCPU\n"
-              << "  myCPU --server [--port N]\n"
-              << "  myCPU --elf <file> [--max-cycles N]\n";
+              << "  myCPU --server [--port N] [--mode multicycle|pipelined]\n"
+              << "  myCPU --elf <file> [--max-cycles N] [--mode multicycle|pipelined]\n";
 }
 
 std::vector<uint8> readBinaryFile(const std::string& path) {
@@ -44,7 +53,7 @@ std::vector<uint8> readBinaryFile(const std::string& path) {
     return data;
 }
 
-void printTraceTail(const CPU& cpu, size_t max_lines = 40) {
+void printTraceTail(const CpuCore& cpu, size_t max_lines = 40) {
     const auto& trace = cpu.getTrace();
     const size_t start = (trace.size() > max_lines) ? (trace.size() - max_lines) : 0;
     std::cout << "Trace tail:" << std::endl;
@@ -53,7 +62,7 @@ void printTraceTail(const CPU& cpu, size_t max_lines = 40) {
     }
 }
 
-void printDebugState(CPU& cpu) {
+void printDebugState(CpuCore& cpu) {
     std::cout << "PC: 0x" << std::hex << cpu.getPC() << std::dec << std::endl;
     std::cout << "gp(x3): " << cpu.getRegisterFile().read(3) << std::endl;
     std::cout << "a0(x10): " << cpu.getRegisterFile().read(10) << std::endl;
@@ -65,7 +74,7 @@ void printDebugState(CPU& cpu) {
     std::cout << "mtval: 0x" << cpu.getCsr().getMtval() << std::dec << std::endl;
 }
 
-void printSpecialTrace(const CPU& cpu) {
+void printSpecialTrace(const CpuCore& cpu) {
     const auto& trace = cpu.getTrace();
     std::cout << "Special trace:" << std::endl;
     for (const auto& line : trace) {
@@ -91,6 +100,7 @@ int main(int argc, char* argv[]) {
     std::string elf_path;
     uint64 max_cycles = 200000;
     uint16 server_port = kDefaultServerPort;
+    SimulationMode mode = SimulationMode::MULTI_CYCLE;
 
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
@@ -108,6 +118,8 @@ int main(int argc, char* argv[]) {
                 return 1;
             }
             server_port = static_cast<uint16>(parsed_port);
+        } else if (arg == "--mode" && i + 1 < argc) {
+            mode = parseMode(argv[++i]);
         } else if (arg == "--help" || arg == "-h") {
             printUsage();
             return 0;
@@ -116,7 +128,10 @@ int main(int argc, char* argv[]) {
 
     auto memory = std::make_shared<Memory>();
     auto bus = std::make_shared<Bus>();
-    auto cpu = std::make_shared<CPU>();
+    std::shared_ptr<CpuCore> cpu =
+        (mode == SimulationMode::PIPELINED)
+            ? std::static_pointer_cast<CpuCore>(std::make_shared<PipelinedCPU>())
+            : std::static_pointer_cast<CpuCore>(std::make_shared<CPU>());
 
     cpu->setMemory(memory);
     cpu->setBus(bus);
@@ -133,6 +148,7 @@ int main(int argc, char* argv[]) {
 
     if (server_mode) {
         auto simulator = std::make_shared<Simulator>();
+        simulator->setMode(mode);
         RpcServer server(server_port);
         server.setSimulator(simulator);
         server.start();
@@ -158,6 +174,7 @@ int main(int argc, char* argv[]) {
         cpu->run(max_cycles);
 
         std::cout << "ELF: " << elf_path << std::endl;
+        std::cout << "Mode: " << (mode == SimulationMode::PIPELINED ? "pipelined" : "multicycle") << std::endl;
         std::cout << "Cycles: " << cpu->getStats().cycle_count << std::endl;
         std::cout << "Instructions: " << cpu->getStats().instruction_count << std::endl;
         std::cout << "tohost: 0x" << std::hex << cpu->getTohostAddress() << std::dec << std::endl;

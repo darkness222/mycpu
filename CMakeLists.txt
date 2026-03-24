@@ -18,6 +18,7 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 set(SOURCES
     src/main.cpp
     src/cpu/CPU.cpp
+    src/cpu/PipelinedCPU.cpp
     src/cpu/Decoder.cpp
     src/cpu/RegisterFile.cpp
     src/cpu/CsrFile.cpp

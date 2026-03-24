@@ -98,11 +98,26 @@ CMakeFiles/myCPU.dir/src/cpu/CPU.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/myCPU.dir/src/cpu/CPU.cpp.s"
 	D:\mingw64\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S D:\study\ripes\mycpu\src\cpu\CPU.cpp -o CMakeFiles\myCPU.dir\src\cpu\CPU.cpp.s
 
+CMakeFiles/myCPU.dir/src/cpu/PipelinedCPU.cpp.obj: CMakeFiles/myCPU.dir/flags.make
+CMakeFiles/myCPU.dir/src/cpu/PipelinedCPU.cpp.obj: CMakeFiles/myCPU.dir/includes_CXX.rsp
+CMakeFiles/myCPU.dir/src/cpu/PipelinedCPU.cpp.obj: D:/study/ripes/mycpu/src/cpu/PipelinedCPU.cpp
+CMakeFiles/myCPU.dir/src/cpu/PipelinedCPU.cpp.obj: CMakeFiles/myCPU.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\study\ripes\mycpu\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/myCPU.dir/src/cpu/PipelinedCPU.cpp.obj"
+	D:\mingw64\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/myCPU.dir/src/cpu/PipelinedCPU.cpp.obj -MF CMakeFiles\myCPU.dir\src\cpu\PipelinedCPU.cpp.obj.d -o CMakeFiles\myCPU.dir\src\cpu\PipelinedCPU.cpp.obj -c D:\study\ripes\mycpu\src\cpu\PipelinedCPU.cpp
+
+CMakeFiles/myCPU.dir/src/cpu/PipelinedCPU.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/myCPU.dir/src/cpu/PipelinedCPU.cpp.i"
+	D:\mingw64\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E D:\study\ripes\mycpu\src\cpu\PipelinedCPU.cpp > CMakeFiles\myCPU.dir\src\cpu\PipelinedCPU.cpp.i
+
+CMakeFiles/myCPU.dir/src/cpu/PipelinedCPU.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/myCPU.dir/src/cpu/PipelinedCPU.cpp.s"
+	D:\mingw64\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S D:\study\ripes\mycpu\src\cpu\PipelinedCPU.cpp -o CMakeFiles\myCPU.dir\src\cpu\PipelinedCPU.cpp.s
+
 CMakeFiles/myCPU.dir/src/cpu/Decoder.cpp.obj: CMakeFiles/myCPU.dir/flags.make
 CMakeFiles/myCPU.dir/src/cpu/Decoder.cpp.obj: CMakeFiles/myCPU.dir/includes_CXX.rsp
 CMakeFiles/myCPU.dir/src/cpu/Decoder.cpp.obj: D:/study/ripes/mycpu/src/cpu/Decoder.cpp
 CMakeFiles/myCPU.dir/src/cpu/Decoder.cpp.obj: CMakeFiles/myCPU.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\study\ripes\mycpu\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/myCPU.dir/src/cpu/Decoder.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\study\ripes\mycpu\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/myCPU.dir/src/cpu/Decoder.cpp.obj"
 	D:\mingw64\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/myCPU.dir/src/cpu/Decoder.cpp.obj -MF CMakeFiles\myCPU.dir\src\cpu\Decoder.cpp.obj.d -o CMakeFiles\myCPU.dir\src\cpu\Decoder.cpp.obj -c D:\study\ripes\mycpu\src\cpu\Decoder.cpp
 
 CMakeFiles/myCPU.dir/src/cpu/Decoder.cpp.i: cmake_force
@@ -117,7 +132,7 @@ CMakeFiles/myCPU.dir/src/cpu/RegisterFile.cpp.obj: CMakeFiles/myCPU.dir/flags.ma
 CMakeFiles/myCPU.dir/src/cpu/RegisterFile.cpp.obj: CMakeFiles/myCPU.dir/includes_CXX.rsp
 CMakeFiles/myCPU.dir/src/cpu/RegisterFile.cpp.obj: D:/study/ripes/mycpu/src/cpu/RegisterFile.cpp
 CMakeFiles/myCPU.dir/src/cpu/RegisterFile.cpp.obj: CMakeFiles/myCPU.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\study\ripes\mycpu\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/myCPU.dir/src/cpu/RegisterFile.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\study\ripes\mycpu\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/myCPU.dir/src/cpu/RegisterFile.cpp.obj"
 	D:\mingw64\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/myCPU.dir/src/cpu/RegisterFile.cpp.obj -MF CMakeFiles\myCPU.dir\src\cpu\RegisterFile.cpp.obj.d -o CMakeFiles\myCPU.dir\src\cpu\RegisterFile.cpp.obj -c D:\study\ripes\mycpu\src\cpu\RegisterFile.cpp
 
 CMakeFiles/myCPU.dir/src/cpu/RegisterFile.cpp.i: cmake_force
@@ -132,7 +147,7 @@ CMakeFiles/myCPU.dir/src/cpu/CsrFile.cpp.obj: CMakeFiles/myCPU.dir/flags.make
 CMakeFiles/myCPU.dir/src/cpu/CsrFile.cpp.obj: CMakeFiles/myCPU.dir/includes_CXX.rsp
 CMakeFiles/myCPU.dir/src/cpu/CsrFile.cpp.obj: D:/study/ripes/mycpu/src/cpu/CsrFile.cpp
 CMakeFiles/myCPU.dir/src/cpu/CsrFile.cpp.obj: CMakeFiles/myCPU.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\study\ripes\mycpu\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/myCPU.dir/src/cpu/CsrFile.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\study\ripes\mycpu\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/myCPU.dir/src/cpu/CsrFile.cpp.obj"
 	D:\mingw64\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/myCPU.dir/src/cpu/CsrFile.cpp.obj -MF CMakeFiles\myCPU.dir\src\cpu\CsrFile.cpp.obj.d -o CMakeFiles\myCPU.dir\src\cpu\CsrFile.cpp.obj -c D:\study\ripes\mycpu\src\cpu\CsrFile.cpp
 
 CMakeFiles/myCPU.dir/src/cpu/CsrFile.cpp.i: cmake_force
@@ -147,7 +162,7 @@ CMakeFiles/myCPU.dir/src/cpu/TrapHandler.cpp.obj: CMakeFiles/myCPU.dir/flags.mak
 CMakeFiles/myCPU.dir/src/cpu/TrapHandler.cpp.obj: CMakeFiles/myCPU.dir/includes_CXX.rsp
 CMakeFiles/myCPU.dir/src/cpu/TrapHandler.cpp.obj: D:/study/ripes/mycpu/src/cpu/TrapHandler.cpp
 CMakeFiles/myCPU.dir/src/cpu/TrapHandler.cpp.obj: CMakeFiles/myCPU.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\study\ripes\mycpu\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/myCPU.dir/src/cpu/TrapHandler.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\study\ripes\mycpu\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/myCPU.dir/src/cpu/TrapHandler.cpp.obj"
 	D:\mingw64\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/myCPU.dir/src/cpu/TrapHandler.cpp.obj -MF CMakeFiles\myCPU.dir\src\cpu\TrapHandler.cpp.obj.d -o CMakeFiles\myCPU.dir\src\cpu\TrapHandler.cpp.obj -c D:\study\ripes\mycpu\src\cpu\TrapHandler.cpp
 
 CMakeFiles/myCPU.dir/src/cpu/TrapHandler.cpp.i: cmake_force
@@ -162,7 +177,7 @@ CMakeFiles/myCPU.dir/src/memory/Memory.cpp.obj: CMakeFiles/myCPU.dir/flags.make
 CMakeFiles/myCPU.dir/src/memory/Memory.cpp.obj: CMakeFiles/myCPU.dir/includes_CXX.rsp
 CMakeFiles/myCPU.dir/src/memory/Memory.cpp.obj: D:/study/ripes/mycpu/src/memory/Memory.cpp
 CMakeFiles/myCPU.dir/src/memory/Memory.cpp.obj: CMakeFiles/myCPU.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\study\ripes\mycpu\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/myCPU.dir/src/memory/Memory.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\study\ripes\mycpu\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/myCPU.dir/src/memory/Memory.cpp.obj"
 	D:\mingw64\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/myCPU.dir/src/memory/Memory.cpp.obj -MF CMakeFiles\myCPU.dir\src\memory\Memory.cpp.obj.d -o CMakeFiles\myCPU.dir\src\memory\Memory.cpp.obj -c D:\study\ripes\mycpu\src\memory\Memory.cpp
 
 CMakeFiles/myCPU.dir/src/memory/Memory.cpp.i: cmake_force
@@ -177,7 +192,7 @@ CMakeFiles/myCPU.dir/src/bus/Bus.cpp.obj: CMakeFiles/myCPU.dir/flags.make
 CMakeFiles/myCPU.dir/src/bus/Bus.cpp.obj: CMakeFiles/myCPU.dir/includes_CXX.rsp
 CMakeFiles/myCPU.dir/src/bus/Bus.cpp.obj: D:/study/ripes/mycpu/src/bus/Bus.cpp
 CMakeFiles/myCPU.dir/src/bus/Bus.cpp.obj: CMakeFiles/myCPU.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\study\ripes\mycpu\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/myCPU.dir/src/bus/Bus.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\study\ripes\mycpu\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/myCPU.dir/src/bus/Bus.cpp.obj"
 	D:\mingw64\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/myCPU.dir/src/bus/Bus.cpp.obj -MF CMakeFiles\myCPU.dir\src\bus\Bus.cpp.obj.d -o CMakeFiles\myCPU.dir\src\bus\Bus.cpp.obj -c D:\study\ripes\mycpu\src\bus\Bus.cpp
 
 CMakeFiles/myCPU.dir/src/bus/Bus.cpp.i: cmake_force
@@ -192,7 +207,7 @@ CMakeFiles/myCPU.dir/src/devices/Device.cpp.obj: CMakeFiles/myCPU.dir/flags.make
 CMakeFiles/myCPU.dir/src/devices/Device.cpp.obj: CMakeFiles/myCPU.dir/includes_CXX.rsp
 CMakeFiles/myCPU.dir/src/devices/Device.cpp.obj: D:/study/ripes/mycpu/src/devices/Device.cpp
 CMakeFiles/myCPU.dir/src/devices/Device.cpp.obj: CMakeFiles/myCPU.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\study\ripes\mycpu\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/myCPU.dir/src/devices/Device.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\study\ripes\mycpu\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/myCPU.dir/src/devices/Device.cpp.obj"
 	D:\mingw64\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/myCPU.dir/src/devices/Device.cpp.obj -MF CMakeFiles\myCPU.dir\src\devices\Device.cpp.obj.d -o CMakeFiles\myCPU.dir\src\devices\Device.cpp.obj -c D:\study\ripes\mycpu\src\devices\Device.cpp
 
 CMakeFiles/myCPU.dir/src/devices/Device.cpp.i: cmake_force
@@ -207,7 +222,7 @@ CMakeFiles/myCPU.dir/src/assembler/Assembler.cpp.obj: CMakeFiles/myCPU.dir/flags
 CMakeFiles/myCPU.dir/src/assembler/Assembler.cpp.obj: CMakeFiles/myCPU.dir/includes_CXX.rsp
 CMakeFiles/myCPU.dir/src/assembler/Assembler.cpp.obj: D:/study/ripes/mycpu/src/assembler/Assembler.cpp
 CMakeFiles/myCPU.dir/src/assembler/Assembler.cpp.obj: CMakeFiles/myCPU.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\study\ripes\mycpu\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/myCPU.dir/src/assembler/Assembler.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\study\ripes\mycpu\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/myCPU.dir/src/assembler/Assembler.cpp.obj"
 	D:\mingw64\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/myCPU.dir/src/assembler/Assembler.cpp.obj -MF CMakeFiles\myCPU.dir\src\assembler\Assembler.cpp.obj.d -o CMakeFiles\myCPU.dir\src\assembler\Assembler.cpp.obj -c D:\study\ripes\mycpu\src\assembler\Assembler.cpp
 
 CMakeFiles/myCPU.dir/src/assembler/Assembler.cpp.i: cmake_force
@@ -222,7 +237,7 @@ CMakeFiles/myCPU.dir/src/rpc/RpcServer.cpp.obj: CMakeFiles/myCPU.dir/flags.make
 CMakeFiles/myCPU.dir/src/rpc/RpcServer.cpp.obj: CMakeFiles/myCPU.dir/includes_CXX.rsp
 CMakeFiles/myCPU.dir/src/rpc/RpcServer.cpp.obj: D:/study/ripes/mycpu/src/rpc/RpcServer.cpp
 CMakeFiles/myCPU.dir/src/rpc/RpcServer.cpp.obj: CMakeFiles/myCPU.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\study\ripes\mycpu\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/myCPU.dir/src/rpc/RpcServer.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\study\ripes\mycpu\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/myCPU.dir/src/rpc/RpcServer.cpp.obj"
 	D:\mingw64\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/myCPU.dir/src/rpc/RpcServer.cpp.obj -MF CMakeFiles\myCPU.dir\src\rpc\RpcServer.cpp.obj.d -o CMakeFiles\myCPU.dir\src\rpc\RpcServer.cpp.obj -c D:\study\ripes\mycpu\src\rpc\RpcServer.cpp
 
 CMakeFiles/myCPU.dir/src/rpc/RpcServer.cpp.i: cmake_force
@@ -237,7 +252,7 @@ CMakeFiles/myCPU.dir/src/elf/ElfLoader.cpp.obj: CMakeFiles/myCPU.dir/flags.make
 CMakeFiles/myCPU.dir/src/elf/ElfLoader.cpp.obj: CMakeFiles/myCPU.dir/includes_CXX.rsp
 CMakeFiles/myCPU.dir/src/elf/ElfLoader.cpp.obj: D:/study/ripes/mycpu/src/elf/ElfLoader.cpp
 CMakeFiles/myCPU.dir/src/elf/ElfLoader.cpp.obj: CMakeFiles/myCPU.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\study\ripes\mycpu\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/myCPU.dir/src/elf/ElfLoader.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=D:\study\ripes\mycpu\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object CMakeFiles/myCPU.dir/src/elf/ElfLoader.cpp.obj"
 	D:\mingw64\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/myCPU.dir/src/elf/ElfLoader.cpp.obj -MF CMakeFiles\myCPU.dir\src\elf\ElfLoader.cpp.obj.d -o CMakeFiles\myCPU.dir\src\elf\ElfLoader.cpp.obj -c D:\study\ripes\mycpu\src\elf\ElfLoader.cpp
 
 CMakeFiles/myCPU.dir/src/elf/ElfLoader.cpp.i: cmake_force
@@ -252,6 +267,7 @@ CMakeFiles/myCPU.dir/src/elf/ElfLoader.cpp.s: cmake_force
 myCPU_OBJECTS = \
 "CMakeFiles/myCPU.dir/src/main.cpp.obj" \
 "CMakeFiles/myCPU.dir/src/cpu/CPU.cpp.obj" \
+"CMakeFiles/myCPU.dir/src/cpu/PipelinedCPU.cpp.obj" \
 "CMakeFiles/myCPU.dir/src/cpu/Decoder.cpp.obj" \
 "CMakeFiles/myCPU.dir/src/cpu/RegisterFile.cpp.obj" \
 "CMakeFiles/myCPU.dir/src/cpu/CsrFile.cpp.obj" \
@@ -268,6 +284,7 @@ myCPU_EXTERNAL_OBJECTS =
 
 myCPU.exe: CMakeFiles/myCPU.dir/src/main.cpp.obj
 myCPU.exe: CMakeFiles/myCPU.dir/src/cpu/CPU.cpp.obj
+myCPU.exe: CMakeFiles/myCPU.dir/src/cpu/PipelinedCPU.cpp.obj
 myCPU.exe: CMakeFiles/myCPU.dir/src/cpu/Decoder.cpp.obj
 myCPU.exe: CMakeFiles/myCPU.dir/src/cpu/RegisterFile.cpp.obj
 myCPU.exe: CMakeFiles/myCPU.dir/src/cpu/CsrFile.cpp.obj
@@ -282,7 +299,7 @@ myCPU.exe: CMakeFiles/myCPU.dir/build.make
 myCPU.exe: CMakeFiles/myCPU.dir/linkLibs.rsp
 myCPU.exe: CMakeFiles/myCPU.dir/objects1.rsp
 myCPU.exe: CMakeFiles/myCPU.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=D:\study\ripes\mycpu\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Linking CXX executable myCPU.exe"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=D:\study\ripes\mycpu\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Linking CXX executable myCPU.exe"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles\myCPU.dir\link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

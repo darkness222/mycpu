@@ -164,12 +164,13 @@ CMakeFiles/myCPU.dir/src/cpu/CPU.cpp.obj: \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/optional \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/enable_special_members.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/unordered_map.h \
- D:\study\ripes\mycpu\src\cpu\RegisterFile.h \
+ D:\study\ripes\mycpu\src\cpu\CpuCore.h \
+ D:/study/ripes/mycpu/src/memory/Memory.h \
  D:/study/ripes/mycpu/include/Constants.h \
+ D:\study\ripes\mycpu\src\cpu\RegisterFile.h \
  D:\study\ripes\mycpu\src\cpu\Decoder.h \
  D:\study\ripes\mycpu\src\cpu\CsrFile.h \
  D:\study\ripes\mycpu\src\cpu\TrapHandler.h \
- D:/study/ripes/mycpu/src/memory/Memory.h \
  D:/study/ripes/mycpu/src/bus/Bus.h \
  D:/study/ripes/mycpu/src/elf/ElfLoader.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/algorithm \

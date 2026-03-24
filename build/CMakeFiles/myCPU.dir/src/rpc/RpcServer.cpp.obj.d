@@ -172,12 +172,14 @@ CMakeFiles/myCPU.dir/src/rpc/RpcServer.cpp.obj: \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/stl_heap.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/uniform_int_dist.h \
  D:/study/ripes/mycpu/src/cpu/CPU.h \
- D:/study/ripes/mycpu/src/cpu/RegisterFile.h \
+ D:/study/ripes/mycpu/src/cpu/CpuCore.h \
+ D:/study/ripes/mycpu/src/memory/Memory.h \
  D:/study/ripes/mycpu/include/Constants.h \
+ D:/study/ripes/mycpu/src/cpu/RegisterFile.h \
  D:/study/ripes/mycpu/src/cpu/Decoder.h \
  D:/study/ripes/mycpu/src/cpu/CsrFile.h \
  D:/study/ripes/mycpu/src/cpu/TrapHandler.h \
- D:/study/ripes/mycpu/src/memory/Memory.h \
+ D:/study/ripes/mycpu/src/cpu/PipelinedCPU.h \
  D:/study/ripes/mycpu/src/bus/Bus.h \
  D:/study/ripes/mycpu/src/devices/Device.h \
  D:/study/ripes/mycpu/src/elf/ElfLoader.h \

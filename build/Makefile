@@ -248,6 +248,30 @@ src/cpu/Decoder.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\myCPU.dir\build.make CMakeFiles/myCPU.dir/src/cpu/Decoder.cpp.s
 .PHONY : src/cpu/Decoder.cpp.s
 
+src/cpu/PipelinedCPU.obj: src/cpu/PipelinedCPU.cpp.obj
+.PHONY : src/cpu/PipelinedCPU.obj
+
+# target to build an object file
+src/cpu/PipelinedCPU.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\myCPU.dir\build.make CMakeFiles/myCPU.dir/src/cpu/PipelinedCPU.cpp.obj
+.PHONY : src/cpu/PipelinedCPU.cpp.obj
+
+src/cpu/PipelinedCPU.i: src/cpu/PipelinedCPU.cpp.i
+.PHONY : src/cpu/PipelinedCPU.i
+
+# target to preprocess a source file
+src/cpu/PipelinedCPU.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\myCPU.dir\build.make CMakeFiles/myCPU.dir/src/cpu/PipelinedCPU.cpp.i
+.PHONY : src/cpu/PipelinedCPU.cpp.i
+
+src/cpu/PipelinedCPU.s: src/cpu/PipelinedCPU.cpp.s
+.PHONY : src/cpu/PipelinedCPU.s
+
+# target to generate assembly for a file
+src/cpu/PipelinedCPU.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\myCPU.dir\build.make CMakeFiles/myCPU.dir/src/cpu/PipelinedCPU.cpp.s
+.PHONY : src/cpu/PipelinedCPU.cpp.s
+
 src/cpu/RegisterFile.obj: src/cpu/RegisterFile.cpp.obj
 .PHONY : src/cpu/RegisterFile.obj
 
@@ -440,6 +464,9 @@ help:
 	@echo ... src/cpu/Decoder.obj
 	@echo ... src/cpu/Decoder.i
 	@echo ... src/cpu/Decoder.s
+	@echo ... src/cpu/PipelinedCPU.obj
+	@echo ... src/cpu/PipelinedCPU.i
+	@echo ... src/cpu/PipelinedCPU.s
 	@echo ... src/cpu/RegisterFile.obj
 	@echo ... src/cpu/RegisterFile.i
 	@echo ... src/cpu/RegisterFile.s

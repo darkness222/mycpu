@@ -1,5 +1,7 @@
 #include "RpcServer.h"
 #include "../cpu/CPU.h"
+#include "../cpu/CpuCore.h"
+#include "../cpu/PipelinedCPU.h"
 #include "../cpu/Decoder.h"
 #include "../memory/Memory.h"
 #include "../bus/Bus.h"
@@ -255,6 +257,14 @@ void RpcServer::start() {
             handleReset(response);
             http_response = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nAccess-Control-Allow-Origin: *\r\nContent-Length: " + 
                            std::to_string(response.length()) + "\r\n\r\n" + response;
+        } else if (path == "/set_mode" && method == "POST") {
+            handleSetMode(body, response);
+            http_response = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nAccess-Control-Allow-Origin: *\r\nContent-Length: " +
+                           std::to_string(response.length()) + "\r\n\r\n" + response;
+        } else if ((path == "/get_mode" || path == "/api/get_mode") && method == "GET") {
+            handleGetMode(response);
+            http_response = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nAccess-Control-Allow-Origin: *\r\nContent-Length: " +
+                           std::to_string(response.length()) + "\r\n\r\n" + response;
         } else if (path == "/assemble" && method == "POST") {
             handleAssemble(body, response);
             http_response = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nAccess-Control-Allow-Origin: *\r\nContent-Length: " + 
@@ -310,6 +320,10 @@ void RpcServer::handleRequest(const std::string& request, std::string& response)
         handleStepInstruction(response);
     } else if (request.find("reset") != std::string::npos) {
         handleReset(response);
+    } else if (request.find("set_mode") != std::string::npos) {
+        handleSetMode(request, response);
+    } else if (request.find("get_mode") != std::string::npos) {
+        handleGetMode(response);
     } else if (request.find("load_program") != std::string::npos) {
         handleLoadProgram(request, response);
     } else if (request.find("load_elf") != std::string::npos) {
@@ -353,6 +367,32 @@ void RpcServer::handleReset(std::string& response) {
         return;
     }
     simulator_->reset();
+    response = simulator_->toJson();
+}
+
+void RpcServer::handleSetMode(const std::string& request, std::string& response) {
+    if (!simulator_) {
+        response = "{\"error\": \"No simulator\"}";
+        return;
+    }
+
+    std::string mode_text = extractJsonStringField(request, "mode");
+    if (mode_text.empty()) {
+        response = "{\"error\": \"Missing mode\"}";
+        return;
+    }
+
+    const bool want_pipeline = mode_text == "PIPELINED" || mode_text == "pipelined" || mode_text == "pipeline";
+    const SimulationMode mode = want_pipeline ? SimulationMode::PIPELINED : SimulationMode::MULTI_CYCLE;
+    simulator_->setMode(mode);
+    response = simulator_->toJson();
+}
+
+void RpcServer::handleGetMode(std::string& response) {
+    if (!simulator_) {
+        response = "{\"error\": \"No simulator\"}";
+        return;
+    }
     response = simulator_->toJson();
 }
 
@@ -561,10 +601,14 @@ std::string RpcServer::escapeJson(const std::string& str) {
 Simulator::Simulator() {
     memory_ = std::make_shared<Memory>();
     bus_ = std::make_shared<Bus>();
-    cpu_ = std::make_shared<CPU>();
+    multicycle_cpu_ = std::make_shared<CPU>();
+    pipelined_cpu_ = std::make_shared<PipelinedCPU>();
+    cpu_ = multicycle_cpu_;
 
-    cpu_->setMemory(memory_);
-    cpu_->setBus(bus_);
+    multicycle_cpu_->setMemory(memory_);
+    multicycle_cpu_->setBus(bus_);
+    pipelined_cpu_->setMemory(memory_);
+    pipelined_cpu_->setBus(bus_);
 
     auto uart = std::make_shared<UARTDevice>();
     auto timer = std::make_shared<TimerDevice>();
@@ -624,6 +668,19 @@ void Simulator::stepInstruction() {
     }
 }
 
+bool Simulator::setMode(SimulationMode mode) {
+    if (mode_ == mode) {
+        return true;
+    }
+
+    mode_ = mode;
+    cpu_ = (mode_ == SimulationMode::PIPELINED)
+        ? std::static_pointer_cast<CpuCore>(pipelined_cpu_)
+        : std::static_pointer_cast<CpuCore>(multicycle_cpu_);
+    reset();
+    return true;
+}
+
 void Simulator::loadProgram(const std::vector<uint32>& program, uint32 start_address) {
     loaded_program_kind_ = LoadedProgramKind::ASSEMBLY;
     loaded_instructions_ = program;
@@ -661,11 +718,21 @@ bool Simulator::loadElf(const std::vector<uint8>& elf_data) {
 }
 
 SimulatorState Simulator::getState() const {
-    return cpu_->getSimulatorState();
+    SimulatorState state = cpu_->getSimulatorState();
+    state.mode = mode_;
+    state.mode_name = mode_ == SimulationMode::PIPELINED ? "Pipelined" : "Multi-cycle";
+    if (mode_ == SimulationMode::PIPELINED) {
+        state.true_pipeline = cpu_->supportsTrueOverlapPipeline();
+        if (!state.true_pipeline && state.mode_note.empty()) {
+            state.mode_note = "Pipeline mode scaffold is wired end to end, but the true overlapped core is still under construction.";
+        }
+    }
+    return state;
 }
 
 std::string Simulator::toJson() const {
-    return cpu_->toJson();
+    SimulatorState state = getState();
+    return state.toJson(memory_.get());
 }
 
 } // namespace mycpu

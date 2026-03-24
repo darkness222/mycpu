@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../include/Types.h"
+#include "CpuCore.h"
 #include "RegisterFile.h"
 #include "Decoder.h"
 #include "CsrFile.h"
@@ -16,14 +17,7 @@ class Memory;
 class Bus;
 class Device;
 
-// ===== CPU 执行模式 =====
-enum class ExecMode : uint8_t {
-    ASSEMBLY = 0,  // 教学汇编模式 (li/add/halt)
-    BINARY = 1,    // 真实 RISC-V 二进制 (机器码)
-    ELF = 2        // ELF 文件加载模式
-};
-
-class CPU {
+class CPU : public CpuCore {
 public:
     CPU();
     ~CPU();
@@ -40,6 +34,9 @@ public:
     // ===== 执行模式 =====
     void setExecMode(ExecMode mode) { exec_mode_ = mode; }
     ExecMode getExecMode() const { return exec_mode_; }
+    SimulationMode getSimulationMode() const override { return SimulationMode::MULTI_CYCLE; }
+    std::string getCoreName() const override { return "Multi-cycle CPU"; }
+    bool supportsTrueOverlapPipeline() const override { return false; }
     bool didTestFinish() const { return test_finished_; }
     bool didTestPass() const { return test_passed_; }
     uint32 getTestCode() const { return test_code_; }
@@ -60,11 +57,11 @@ public:
     const PipelineRegisters& getPipelineRegisters() const { return pipeline_regs_; }
     const std::vector<std::string>& getTrace() const { return trace_; }
 
-    void setMemory(std::shared_ptr<Memory> memory) { memory_ = memory; trap_handler_.setMemory(memory); }
-    void setBus(std::shared_ptr<Bus> bus) { bus_ = bus; trap_handler_.setBus(bus); }
+    void setMemory(std::shared_ptr<Memory> memory) override { memory_ = memory; trap_handler_.setMemory(memory); }
+    void setBus(std::shared_ptr<Bus> bus) override { bus_ = bus; trap_handler_.setBus(bus); }
 
-    SimulatorState getSimulatorState() const;
-    std::string toJson() const;
+    SimulatorState getSimulatorState() const override;
+    std::string toJson() const override;
 
 private:
     void fetch();
@@ -115,6 +112,9 @@ private:
     std::vector<std::string> trace_;
 
     uint32 fetch_instruction_;
+    bool fetch_view_valid_;
+    uint32 fetch_view_pc_;
+    std::string fetch_view_text_;
     bool branch_taken_;
     uint32 branch_target_;
     bool test_finished_;

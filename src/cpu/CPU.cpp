@@ -15,6 +15,8 @@ CPU::CPU()
     , state_(CpuState::HALTED)
     , current_stage_(PipelineStage::FETCH)
     , exec_mode_(ExecMode::ASSEMBLY)
+    , fetch_view_valid_(false)
+    , fetch_view_pc_(0)
     , branch_taken_(false)
     , branch_target_(0)
     , test_finished_(false)
@@ -48,6 +50,9 @@ void CPU::reset() {
 
     pipeline_regs_ = PipelineRegisters();
     fetch_instruction_ = 0;
+    fetch_view_valid_ = false;
+    fetch_view_pc_ = 0;
+    fetch_view_text_.clear();
     branch_taken_ = false;
     branch_target_ = 0;
     test_finished_ = false;
@@ -190,6 +195,9 @@ void CPU::run(uint64 cycles) {
 
 void CPU::fetch() {
     if (!memory_) return;
+    fetch_view_valid_ = false;
+    fetch_view_pc_ = 0;
+    fetch_view_text_.clear();
     if (exec_mode_ == ExecMode::ELF && pc_ < constants::RISCV_TEST_BASE) {
         std::ostringstream warn;
         warn << "[WARN] PC dropped below official ELF base: 0x" << std::hex << pc_;
@@ -233,6 +241,9 @@ void CPU::fetch() {
 
     fetch_instruction_ = memory_->readWord(translated_pc);
     Instruction instr = decoder_.decode(fetch_instruction_, pc_);
+    fetch_view_valid_ = true;
+    fetch_view_pc_ = pc_;
+    fetch_view_text_ = decoder_.disassemble(instr);
 
     // 填入 IF/ID 流水线寄存器
     pipeline_regs_.if_id_pc = pc_;
@@ -860,8 +871,18 @@ SimulatorState CPU::getSimulatorState() const {
     SimulatorState state;
     const auto register_snapshot = registers_.getAllRegisters();
     state.state = state_;
+    state.mode = SimulationMode::MULTI_CYCLE;
+    state.mode_name = "Multi-cycle";
+    state.true_pipeline = false;
+    state.mode_note = "Sequential 5-stage teaching model. Instructions advance stage by stage, but they are not overlapped yet.";
     state.pc = pc_;
     state.registers.assign(register_snapshot.begin(), register_snapshot.end());
+
+    // 调试输出
+    std::cout << "[CPU] getSimulatorState: pc=" << std::hex << pc_
+              << ", registers[1]=" << std::dec << register_snapshot[1]
+              << ", registers[2]=" << register_snapshot[2] << std::endl;
+
     state.current_stage = current_stage_;
     state.pipeline_regs = pipeline_regs_;
     state.stats = stats_;
@@ -889,6 +910,17 @@ SimulatorState CPU::getSimulatorState() const {
     state.idex_text  = pipeline_regs_.id_ex_valid  ? decoder_.disassemble(pipeline_regs_.id_ex_instruction)  : "";
     state.exmem_text = pipeline_regs_.ex_mem_valid ? decoder_.disassemble(pipeline_regs_.ex_mem_instruction) : "";
     state.memwb_text = pipeline_regs_.mem_wb_valid ? decoder_.disassemble(pipeline_regs_.mem_wb_instruction) : "";
+    state.fetch_text = fetch_view_text_;
+    state.ifid_pc = pipeline_regs_.if_id_pc;
+    state.idex_pc = pipeline_regs_.id_ex_pc;
+    state.exmem_pc = pipeline_regs_.ex_mem_pc;
+    state.memwb_pc = pipeline_regs_.mem_wb_pc;
+    state.fetch_pc = fetch_view_pc_;
+    state.ifid_valid = pipeline_regs_.if_id_valid;
+    state.idex_valid = pipeline_regs_.id_ex_valid;
+    state.exmem_valid = pipeline_regs_.ex_mem_valid;
+    state.memwb_valid = pipeline_regs_.mem_wb_valid;
+    state.fetch_valid = fetch_view_valid_;
 
     // 填充内存快照
     if (memory_) {

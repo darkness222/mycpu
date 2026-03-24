@@ -76,6 +76,17 @@ enum class PipelineStage : uint8_t {
     WRITEBACK = 4
 };
 
+enum class SimulationMode : uint8_t {
+    MULTI_CYCLE = 0,
+    PIPELINED = 1
+};
+
+enum class ExecMode : uint8_t {
+    ASSEMBLY = 0,
+    BINARY = 1,
+    ELF = 2
+};
+
 // 异常类型
 enum class ExceptionType : uint8_t {
     NONE = 0,
@@ -216,6 +227,7 @@ struct CsrState {
 // 模拟器状态（用于前端展示）
 struct SimulatorState {
     CpuState state;
+    SimulationMode mode;
     uint32 pc;
     std::vector<int32> registers;
     std::unordered_map<Address, uint32> memory_snapshot;
@@ -227,12 +239,38 @@ struct SimulatorState {
     MmuState mmu;
     CsrState csr;
     std::vector<std::string> execution_trace;
+    std::string mode_name;
+    bool true_pipeline;
+    std::string mode_note;
 
     // 已解码的流水线指令文本
     std::string ifid_text;
     std::string idex_text;
     std::string exmem_text;
     std::string memwb_text;
+    std::string fetch_text;
+    std::string decode_text;
+    std::string execute_text;
+    std::string memory_text;
+    std::string writeback_text;
+    uint32 ifid_pc;
+    uint32 idex_pc;
+    uint32 exmem_pc;
+    uint32 memwb_pc;
+    uint32 fetch_pc;
+    uint32 decode_pc;
+    uint32 execute_pc;
+    uint32 memory_pc;
+    uint32 writeback_pc;
+    bool ifid_valid;
+    bool idex_valid;
+    bool exmem_valid;
+    bool memwb_valid;
+    bool fetch_valid;
+    bool decode_valid;
+    bool execute_valid;
+    bool memory_valid;
+    bool writeback_valid;
 
     SimulatorState();
     std::string toJson(const void* memory_ptr = nullptr) const;
@@ -252,7 +290,31 @@ struct InstructionInfo {
 const std::vector<InstructionInfo>& getSupportedInstructions();
 
 // 内联实现
-inline SimulatorState::SimulatorState() : state(CpuState::HALTED), pc(0), current_stage(PipelineStage::FETCH) {
+inline SimulatorState::SimulatorState()
+    : state(CpuState::HALTED),
+      mode(SimulationMode::MULTI_CYCLE),
+      pc(0),
+      current_stage(PipelineStage::FETCH),
+      mode_name("Multi-cycle"),
+      true_pipeline(false),
+      ifid_pc(0),
+      idex_pc(0),
+      exmem_pc(0),
+      memwb_pc(0),
+      fetch_pc(0),
+      decode_pc(0),
+      execute_pc(0),
+      memory_pc(0),
+      writeback_pc(0),
+      ifid_valid(false),
+      idex_valid(false),
+      exmem_valid(false),
+      memwb_valid(false),
+      fetch_valid(false),
+      decode_valid(false),
+      execute_valid(false),
+      memory_valid(false),
+      writeback_valid(false) {
     registers.resize(32, 0);
 }
 
@@ -268,33 +330,6 @@ inline std::string SimulatorState::toJson(const void* memory_ptr) const {
         }
     };
 
-    std::ostringstream oss;
-    oss << "{";
-    oss << "\"pc\":" << pc << ",";
-    oss << "\"pcInstructionIndex\":" << (pc / 4) << ",";
-    oss << "\"cycle\":" << stats.cycle_count << ",";
-    oss << "\"state\":\"" << state_to_string(state) << "\",";
-    oss << "\"registers\":[";
-    for (size_t i = 0; i < registers.size(); ++i) {
-        if (i > 0) oss << ",";
-        oss << registers[i];
-    }
-    oss << "]";
-
-    // 内存快照（通过 void* 避免前向声明循环依赖）
-    oss << ",\"memory\":{";
-    if (memory_ptr) {
-        // 将 memory_snapshot 的 unordered_map 序列化为 JSON
-        bool first = true;
-        for (const auto& kv : memory_snapshot) {
-            if (!first) oss << ",";
-            oss << "\"" << kv.first << "\":" << kv.second;
-            first = false;
-        }
-    }
-    oss << "}";
-
-    // 反斜杠转义工具（内联 lambda，C++14+）
     auto json_esc = [](const std::string& s) -> std::string {
         std::string r;
         r.reserve(s.size());
@@ -305,15 +340,90 @@ inline std::string SimulatorState::toJson(const void* memory_ptr) const {
         return r;
     };
 
-    // 流水线寄存器（已解码的文本由 CPU 填充）
-    oss << ",\"pipelineLatches\":{";
-    oss << "\"ifid\":"  << (ifid_text.empty()  ? "null" : "\"" + json_esc(ifid_text)  + "\"");
-    oss << ",\"idex\":"  << (idex_text.empty()  ? "null" : "\"" + json_esc(idex_text)  + "\"");
-    oss << ",\"exmem\":" << (exmem_text.empty() ? "null" : "\"" + json_esc(exmem_text) + "\"");
-    oss << ",\"memwb\":" << (memwb_text.empty() ? "null" : "\"" + json_esc(memwb_text) + "\"");
+    std::ostringstream oss;
+    oss << "{";
+    oss << "\"pc\":" << pc << ",";
+    oss << "\"pcInstructionIndex\":" << (pc / 4) << ",";
+    oss << "\"cycle\":" << stats.cycle_count << ",";
+    oss << "\"mode\":\"" << (mode == SimulationMode::PIPELINED ? "PIPELINED" : "MULTI_CYCLE") << "\",";
+    oss << "\"modeName\":\"" << json_esc(mode_name) << "\",";
+    oss << "\"truePipeline\":" << (true_pipeline ? "true" : "false") << ",";
+    oss << "\"modeNote\":\"" << json_esc(mode_note) << "\",";
+    oss << "\"state\":\"" << state_to_string(state) << "\",";
+    oss << "\"registers\":[";
+    for (size_t i = 0; i < registers.size(); ++i) {
+        if (i > 0) oss << ",";
+        oss << registers[i];
+    }
+    oss << "]";
+
+    oss << ",\"memory\":{";
+    if (memory_ptr) {
+        bool first = true;
+        for (const auto& kv : memory_snapshot) {
+            if (!first) oss << ",";
+            oss << "\"" << kv.first << "\":" << kv.second;
+            first = false;
+        }
+    }
     oss << "}";
 
-    // 冒险信号
+    oss << ",\"pipelineLatches\":{";
+    oss << "\"fetch\":{"
+        << "\"valid\":" << (fetch_valid ? "true" : "false")
+        << ",\"pc\":" << fetch_pc
+        << ",\"text\":" << (fetch_text.empty() ? "null" : "\"" + json_esc(fetch_text) + "\"")
+        << "},";
+    oss << "\"ifid\":{"
+        << "\"valid\":" << (ifid_valid ? "true" : "false")
+        << ",\"pc\":" << ifid_pc
+        << ",\"text\":" << (ifid_text.empty() ? "null" : "\"" + json_esc(ifid_text) + "\"")
+        << "}";
+    oss << ",\"idex\":{"
+        << "\"valid\":" << (idex_valid ? "true" : "false")
+        << ",\"pc\":" << idex_pc
+        << ",\"text\":" << (idex_text.empty() ? "null" : "\"" + json_esc(idex_text) + "\"")
+        << "}";
+    oss << ",\"exmem\":{"
+        << "\"valid\":" << (exmem_valid ? "true" : "false")
+        << ",\"pc\":" << exmem_pc
+        << ",\"text\":" << (exmem_text.empty() ? "null" : "\"" + json_esc(exmem_text) + "\"")
+        << "}";
+    oss << ",\"memwb\":{"
+        << "\"valid\":" << (memwb_valid ? "true" : "false")
+        << ",\"pc\":" << memwb_pc
+        << ",\"text\":" << (memwb_text.empty() ? "null" : "\"" + json_esc(memwb_text) + "\"")
+        << "}";
+    oss << "}";
+
+    oss << ",\"stageViews\":{";
+    oss << "\"if\":{"
+        << "\"valid\":" << (fetch_valid ? "true" : "false")
+        << ",\"pc\":" << fetch_pc
+        << ",\"text\":" << (fetch_text.empty() ? "null" : "\"" + json_esc(fetch_text) + "\"")
+        << "}";
+    oss << ",\"id\":{"
+        << "\"valid\":" << (decode_valid ? "true" : "false")
+        << ",\"pc\":" << decode_pc
+        << ",\"text\":" << (decode_text.empty() ? "null" : "\"" + json_esc(decode_text) + "\"")
+        << "}";
+    oss << ",\"ex\":{"
+        << "\"valid\":" << (execute_valid ? "true" : "false")
+        << ",\"pc\":" << execute_pc
+        << ",\"text\":" << (execute_text.empty() ? "null" : "\"" + json_esc(execute_text) + "\"")
+        << "}";
+    oss << ",\"mem\":{"
+        << "\"valid\":" << (memory_valid ? "true" : "false")
+        << ",\"pc\":" << memory_pc
+        << ",\"text\":" << (memory_text.empty() ? "null" : "\"" + json_esc(memory_text) + "\"")
+        << "}";
+    oss << ",\"wb\":{"
+        << "\"valid\":" << (writeback_valid ? "true" : "false")
+        << ",\"pc\":" << writeback_pc
+        << ",\"text\":" << (writeback_text.empty() ? "null" : "\"" + json_esc(writeback_text) + "\"")
+        << "}";
+    oss << "}";
+
     oss << ",\"flowSignals\":{";
     oss << "\"stall\":" << (hazard_signals.stall ? "true" : "false") << ",";
     oss << "\"flush\":" << (hazard_signals.flush ? "true" : "false") << ",";
@@ -327,25 +437,28 @@ inline std::string SimulatorState::toJson(const void* memory_ptr) const {
         if (!first_fwd) oss << ",";
         oss << "\"MEM/WB->ID/EX (x" << (int)hazard_signals.forward_from_memwb << ")\"";
     }
-    oss << "],\"notes\":[]";
+    oss << "],\"notes\":[";
+    if (!hazard_signals.description.empty()) {
+        oss << "\"" << json_esc(hazard_signals.description) << "\"";
+    }
+    oss << "]";
     oss << "}";
 
-    // Bubble
     oss << ",\"bubble\":{\"active\":false,\"stage\":\"\",\"reason\":\"\"}";
 
-    // 统计
     oss << ",\"stats\":{\"cycles\":" << stats.cycle_count
         << ",\"instructions\":" << stats.instruction_count
-        << ",\"stalls\":" << stats.stall_count << "}";
+        << ",\"stalls\":" << stats.stall_count
+        << ",\"flushes\":" << stats.flush_count
+        << ",\"branchTaken\":" << stats.branch_taken
+        << ",\"branchNotTaken\":" << stats.branch_not_taken << "}";
 
-    // 当前阶段
     oss << ",\"stageIndex\":" << (int)current_stage;
     oss << ",\"stage\":\"" << (current_stage == PipelineStage::FETCH ? "IF" :
                                current_stage == PipelineStage::DECODE ? "ID" :
                                current_stage == PipelineStage::EXECUTE ? "EX" :
                                current_stage == PipelineStage::MEMORY ? "MEM" : "WB") << "\"";
 
-    // 外设状态
     oss << ",\"peripherals\":{";
     oss << "\"uart_buffer\":\"" << json_esc(peripherals.uart_buffer) << "\"";
     oss << ",\"timer_value\":" << peripherals.timer_value;
@@ -378,7 +491,6 @@ inline std::string SimulatorState::toJson(const void* memory_ptr) const {
     oss << ",\"mtval\":" << csr.mtval;
     oss << "}";
 
-    // trace
     oss << ",\"trace\":[";
     for (size_t i = 0; i < execution_trace.size(); ++i) {
         if (i > 0) oss << ",";

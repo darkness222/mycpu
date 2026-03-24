@@ -13,6 +13,12 @@
 },
 {
   "directory": "D:/study/ripes/mycpu/build",
+  "command": "D:\\mingw64\\bin\\c++.exe  @CMakeFiles/myCPU.dir/includes_CXX.rsp -std=c++17 -Wall -Wextra -Wpedantic -o CMakeFiles\\myCPU.dir\\src\\cpu\\PipelinedCPU.cpp.obj -c D:\\study\\ripes\\mycpu\\src\\cpu\\PipelinedCPU.cpp",
+  "file": "D:/study/ripes/mycpu/src/cpu/PipelinedCPU.cpp",
+  "output": "CMakeFiles/myCPU.dir/src/cpu/PipelinedCPU.cpp.obj"
+},
+{
+  "directory": "D:/study/ripes/mycpu/build",
   "command": "D:\\mingw64\\bin\\c++.exe  @CMakeFiles/myCPU.dir/includes_CXX.rsp -std=c++17 -Wall -Wextra -Wpedantic -o CMakeFiles\\myCPU.dir\\src\\cpu\\Decoder.cpp.obj -c D:\\study\\ripes\\mycpu\\src\\cpu\\Decoder.cpp",
   "file": "D:/study/ripes/mycpu/src/cpu/Decoder.cpp",
   "output": "CMakeFiles/myCPU.dir/src/cpu/Decoder.cpp.obj"

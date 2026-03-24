@@ -9,6 +9,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/myCPU.dir/src/cpu/CsrFile.cpp.obj.d"
   "CMakeFiles/myCPU.dir/src/cpu/Decoder.cpp.obj"
   "CMakeFiles/myCPU.dir/src/cpu/Decoder.cpp.obj.d"
+  "CMakeFiles/myCPU.dir/src/cpu/PipelinedCPU.cpp.obj"
+  "CMakeFiles/myCPU.dir/src/cpu/PipelinedCPU.cpp.obj.d"
   "CMakeFiles/myCPU.dir/src/cpu/RegisterFile.cpp.obj"
   "CMakeFiles/myCPU.dir/src/cpu/RegisterFile.cpp.obj.d"
   "CMakeFiles/myCPU.dir/src/cpu/TrapHandler.cpp.obj"
