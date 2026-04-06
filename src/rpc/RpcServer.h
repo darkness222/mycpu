@@ -7,83 +7,94 @@
 #include <functional>
 #include <unordered_map>
 
-namespace mycpu {
+namespace mycpu
+{
 
-// 前向声明
-class Simulator;
-class Memory;
-class Bus;
-class CPU;
-class CpuCore;
-class PipelinedCPU;
+    // 前向声明
+    class Simulator;
+    class Memory;
+    class Bus;
+    class CPU;
+    class CpuCore;
+    class PipelinedCPU;
 
-class RpcServer {
-public:
-    RpcServer(uint16 port = 18080);
-    ~RpcServer();
+    class RpcServer
+    {
+    public:
+        RpcServer(uint16 port = 18080);
+        ~RpcServer();
 
-    void setSimulator(std::shared_ptr<Simulator> simulator);
-    void start();
-    void stop();
-    bool isRunning() const { return running_; }
+        void setSimulator(std::shared_ptr<Simulator> simulator);
+        void start();
+        void stop();
+        bool isRunning() const { return running_; }
 
-private:
-    void handleRequest(const std::string& request, std::string& response);
-    void handleGetState(std::string& response);
-    void handleStep(std::string& response);
-    void handleStepInstruction(std::string& response);
-    void handleReset(std::string& response);
-    void handleLoadProgram(const std::string& request, std::string& response);
-    void handleAssemble(const std::string& request, std::string& response);
-    void handleGetInstructions(std::string& response);
-    void handleLoadElf(const std::string& request, std::string& response);
-    void handleLoadBinary(const std::string& request, std::string& response);
-    void handleSetMode(const std::string& request, std::string& response);
-    void handleGetMode(std::string& response);
+    private:
+        void handleRequest(const std::string &request, std::string &response);
+        void handleGetState(std::string &response);
+        void handleStep(std::string &response);
+        void handleStepInstruction(std::string &response);
+        void handleReset(std::string &response);
+        void handleLoadProgram(const std::string &request, std::string &response);
+        void handleAssemble(const std::string &request, std::string &response);
+        void handleGetInstructions(std::string &response);
+        void handleLoadElf(const std::string &request, std::string &response);
+        void handleLoadBinary(const std::string &request, std::string &response);
+        void handleSetMode(const std::string &request, std::string &response);
+        void handleGetMode(std::string &response);
+        bool handleWebSocketSession(std::intptr_t client_socket, const std::string &request_path, const std::string &raw_request);
+        std::string buildGameStateJson(const std::string &request, bool include_full_state);
+        void handleGameInit(std::string &response);
+        void handleGameStep(const std::string &request, std::string &response);
+        void handleGameGetState(std::string &response);
 
-    std::string escapeJson(const std::string& str);
+        std::string escapeJson(const std::string &str);
 
-    uint16 port_;
-    bool running_;
-    std::shared_ptr<Simulator> simulator_;
-};
-
-class Simulator {
-public:
-    Simulator();
-
-    void reset();
-    void step();
-    void stepInstruction();
-    void loadProgram(const std::vector<uint32>& program, uint32 start_address = 0);
-    void loadBinary(const std::vector<uint32>& program, uint32 start_address = 0);
-    bool loadElf(const std::vector<uint8>& elf_data);
-
-    SimulatorState getState() const;
-    bool setMode(SimulationMode mode);
-    SimulationMode getMode() const { return mode_; }
-    std::vector<uint32> getLoadedInstructions() const { return loaded_instructions_; }
-    std::string toJson() const;
-
-private:
-    enum class LoadedProgramKind {
-        NONE,
-        ASSEMBLY,
-        BINARY,
-        ELF
+        uint16 port_;
+        bool running_;
+        std::shared_ptr<Simulator> simulator_;
     };
 
-    std::shared_ptr<Memory> memory_;
-    std::shared_ptr<Bus> bus_;
-    std::shared_ptr<CpuCore> cpu_;
-    std::shared_ptr<CPU> multicycle_cpu_;
-    std::shared_ptr<PipelinedCPU> pipelined_cpu_;
-    SimulationMode mode_ = SimulationMode::MULTI_CYCLE;
-    std::vector<uint32> loaded_instructions_;
-    std::vector<uint8> loaded_elf_;
-    uint32 loaded_start_address_ = 0;
-    LoadedProgramKind loaded_program_kind_ = LoadedProgramKind::NONE;
-    bool suppress_reload_on_reset_ = false;
-};
+    class Simulator
+    {
+    public:
+        Simulator();
+
+        void reset();
+        void resetCpuOnly();
+        void step();
+        void stepInstruction();
+        void loadProgram(const std::vector<uint32> &program, uint32 start_address = 0);
+        void loadBinary(const std::vector<uint32> &program, uint32 start_address = 0);
+        bool loadElf(const std::vector<uint8> &elf_data);
+
+        SimulatorState getState() const;
+        bool setMode(SimulationMode mode);
+        SimulationMode getMode() const { return mode_; }
+        std::vector<uint32> getLoadedInstructions() const { return loaded_instructions_; }
+        std::string toJson() const;
+        std::shared_ptr<Memory> getMemory() const { return memory_; }
+
+    private:
+        enum class LoadedProgramKind
+        {
+            NONE,
+            ASSEMBLY,
+            BINARY,
+            ELF
+        };
+
+        std::shared_ptr<Memory> memory_;
+        std::shared_ptr<Bus> bus_;
+        std::shared_ptr<CpuCore> cpu_;
+        std::shared_ptr<CPU> multicycle_cpu_;
+        std::shared_ptr<PipelinedCPU> pipelined_cpu_;
+        SimulationMode mode_ = SimulationMode::MULTI_CYCLE;
+        std::vector<uint32> loaded_instructions_;
+        std::vector<uint8> loaded_elf_;
+        uint32 loaded_start_address_ = 0;
+        LoadedProgramKind loaded_program_kind_ = LoadedProgramKind::NONE;
+        bool suppress_reload_on_reset_ = false;
+    };
 
 } // namespace mycpu

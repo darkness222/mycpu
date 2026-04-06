@@ -27,11 +27,11 @@ public:
     void run(uint64 cycles);
     void loadProgram(const std::vector<uint32>& program, uint32 start_address = 0);
 
-    // ===== ELF 加载接口 =====
+    // ===== ELF 鍔犺浇鎺ュ彛 =====
     bool loadElf(const std::vector<uint8>& elf_data);
     bool loadBinary(const std::vector<uint32>& program, uint32 start_address = 0x00000000);
 
-    // ===== 执行模式 =====
+    // ===== 鎵ц妯″紡 =====
     void setExecMode(ExecMode mode) { exec_mode_ = mode; }
     ExecMode getExecMode() const { return exec_mode_; }
     SimulationMode getSimulationMode() const override { return SimulationMode::MULTI_CYCLE; }
@@ -42,11 +42,11 @@ public:
     uint32 getTestCode() const { return test_code_; }
     uint32 getTohostAddress() const { return tohost_address_; }
 
-    // ===== CSR / Trap 接口 =====
+    // ===== CSR / Trap 鎺ュ彛 =====
     CsrFile& getCsr() { return csr_; }
     TrapHandler& getTrapHandler() { return trap_handler_; }
 
-    // 状态访问
+    // 鐘舵€佽闂?
     uint32 getPC() const { return pc_; }
     CpuState getState() const { return state_; }
     PipelineStage getCurrentStage() const { return current_stage_; }
@@ -75,7 +75,7 @@ private:
     void handleStall();
     void handleFlush();
 
-    // ===== Trap 相关 =====
+    // ===== Trap 鐩稿叧 =====
     bool checkAndTakeInterrupt();
     void handleTrap(const TrapInfo& trap);
     void handleEcallSyscall();
@@ -85,7 +85,7 @@ private:
     bool resolveMemoryAccess(uint32 addr, MemoryAccessType access, uint8 size,
                              uint32 pc, uint32& translated_addr);
 
-    // ===== CSR 指令执行 =====
+    // ===== CSR 鎸囦护鎵ц =====
     void executeCsrInstruction(const Instruction& instr);
 
     int32 alu(int32 operand1, int32 operand2, uint8 funct3, bool is_sub = false);

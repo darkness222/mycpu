@@ -14,6 +14,7 @@ void Bus::reset() {
 }
 
 void Bus::connectDevice(uint32 base_address, std::shared_ptr<Device> device) {
+    (void)base_address;
     devices_.push_back(device);
 }
 

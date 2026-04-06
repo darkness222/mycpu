@@ -53,6 +53,16 @@ public:
     std::string toJson() const override;
 
 private:
+    struct BranchPredictorEntry {
+        uint8 counter = 1;
+    };
+
+    struct CacheLine {
+        bool valid = false;
+        uint32 tag = 0;
+        std::array<uint8, 16> bytes{};
+    };
+
     struct StageControl {
         bool reg_write = false;
         bool mem_read = false;
@@ -78,6 +88,14 @@ private:
     void handleEcall();
     void handleEbreak();
     int32 executeCsrInstruction(const Instruction& instr, int32 operand1);
+    int32 executeMulDivInstruction(const Instruction& instr, int32 operand1, int32 operand2,
+                                  bool& result_ready, bool& starts_multicycle_div);
+    bool isBranchPredictionTaken(uint32 pc) const;
+    void updateBranchPredictor(uint32 pc, bool taken);
+    bool readInstructionCached(uint32 addr, uint32& word);
+    bool readDataCached(uint32 addr, uint8 size, uint32& value);
+    void writeDataCached(uint32 addr, uint8 size, uint32 value);
+    void fillCacheLine(std::array<CacheLine, 64>& cache, uint32 addr);
 
     uint32 pc_;
     CpuState state_;
@@ -118,6 +136,19 @@ private:
     bool test_passed_;
     uint32 test_code_;
     uint32 tohost_address_;
+    std::array<BranchPredictorEntry, 64> branch_predictor_{};
+    std::array<CacheLine, 64> instruction_cache_{};
+    std::array<CacheLine, 64> data_cache_{};
+    bool div_in_progress_ = false;
+    uint8 div_cycle_ = 0;
+    int32 div_dividend_ = 0;
+    int32 div_divisor_ = 0;
+    int32 div_result_ = 0;
+    Instruction div_saved_instr_;
+    uint32 div_saved_pc_ = 0;
+    int32 div_saved_operand2_ = 0;
+    bool div_saved_predicted_taken_ = false;
+    uint32 div_saved_predicted_target_ = 0;
 };
 
 } // namespace mycpu

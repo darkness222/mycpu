@@ -42,8 +42,10 @@ private:
     uint32 encodeBType(const std::string& mnemonic, uint8 rs1, uint8 rs2, int32 imm);
     uint32 encodeUType(const std::string& mnemonic, uint8 rd, int32 imm);
     uint32 encodeJType(const std::string& mnemonic, uint8 rd, int32 imm);
+    uint32 encodeSystemType(const std::string& mnemonic, uint8 rd, uint8 rs1, uint16 csr);
 
     uint8 parseRegister(const std::string& reg);
+    uint16 parseCsrAddress(const std::string& csr_str);
     int32 parseImmediate(const std::string& imm_str);
 
     static std::string last_error_;

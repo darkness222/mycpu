@@ -1,0 +1,330 @@
+\documentclass[12pt, a4paper]{article}
+
+\usepackage{ctex}
+\usepackage{geometry}
+\geometry{left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm}
+
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{setspace}
+\usepackage[hidelinks]{hyperref}
+
+\titleformat{\section}{\centering\heiti\zihao{3}\bfseries}{\thesection}{0.5em}{}
+\titleformat{\subsection}{\heiti\zihao{4}\bfseries}{\thesubsection}{0.5em}{}
+\titleformat{\subsubsection}{\heiti\zihao{5}\bfseries}{\thesubsubsection}{0.5em}{}
+
+\begin{document}
+
+% 封面页
+\begin{titlepage}
+\vspace*{2cm}
+\begin{center}
+
+\textbf{\heiti\zihao{2} 《计算机系统结构》课程设计项目开题报告}
+
+\vspace{2cm}
+
+\textbf{\heiti\zihao{1} 基于 RISC-V 的多周期/流水线双模式可视化 CPU 模拟器}
+
+\vspace{2.5cm}
+
+\begin{tabular}{ll}
+\textbf{\heiti\zihao{4} 学院：} & \underline{\hspace{6cm}} \\[0.8cm]
+\textbf{\heiti\zihao{4} 专业：} & \underline{\hspace{6cm}} \\[0.8cm]
+\textbf{\heiti\zihao{4} 成员：} & \underline{\hspace{6cm}} \\[0.8cm]
+\textbf{\heiti\zihao{4} 指导教师：} & \underline{\hspace{6cm}} \\
+\end{tabular}
+
+\vspace*{\fill}
+
+\textbf{\zihao{4} 撰写日期：2026 年 3 月}
+
+\end{center}
+\end{titlepage}
+
+% 目录页
+\newpage
+\tableofcontents
+\newpage
+
+% 正文字体和行距设置
+\fontsize{12pt}{18pt}\selectfont
+\setstretch{1.25}
+\CJKfamily{zhsong}
+
+% 正文标题
+\begin{center}
+\textbf{\heiti\zihao{2} 《计算机系统结构》课程设计项目开题报告}
+
+\vspace{0.5cm}
+\textbf{\heiti\zihao{3} 基于 RISC-V 的多周期/流水线双模式可视化 CPU 模拟器}
+\end{center}
+
+\vspace{1cm}
+
+\section{项目背景与意义}
+
+\subsection{课程改革背景}
+
+指令集架构是计算机系统的核心抽象层，CPU 是计算机体系结构课程的关键教学载体。传统纸面教学与简单动画难以让学生体会 CPU 内部状态的动态变化，理解流水线指令重叠执行的时空关系。本项目响应课程改革号召，采用"项目制"教学方式，让学生通过实际动手实现一个完整的 CPU 模拟器，深入理解计算机系统结构的核心概念。
+
+RISC-V 作为开源指令集架构，具有简洁、模块化、生态活跃的特点，广泛用于学术与教学。相较于 x86 的复杂性和 ARM 的商业授权限制，RISC-V 为教学提供了透明可控的基础。
+
+\subsection{项目意义}
+
+本项目的意义体现在三个方面。首先是深化流水线原理理解，通过前后端分离的可视化界面，学生可以实时观察 PC、寄存器、内存、流水线锁存器及冒险检测信号的状态，将抽象的时序图转化为直观体验。其次是支持多周期与流水线双模式对比研究，统一接口支持两种执行模型，通过性能统计量化对比 CPI、IPC、stall 率等，让学生感受流水线性能提升与局限。第三是提供可扩展实验平台，模块化设计（C++ 后端+HTTP 接口+React 前端）支持后续扩展分支预测、Cache、异常中断等高级主题。
+
+\subsection{创新点}
+
+本项目的创新点包括：前后端分离架构（C++ 后端+HTTP RPC 接口+React 前端），松耦合通信便于迭代扩展；多周期与流水线双模式支持，统一接口透明切换执行路径；流水线时间轴可视化，时空图实时展示指令重叠执行，标注 stall、flush、bubble 等冒险事件；完整指令支持，实现 RISC-V RV32I 基础整数指令集全部 37 条指令。
+
+\subsection{对标参考}
+
+本项目对标成熟的开源模拟器项目 Ripes（\url{https://github.com/mortbopet/Ripes}），该模拟器由丹麦技术大学开发，是功能完整的 RISC-V 可视化教学工具。同时参考 Spike（RISC-V 官方参考模拟器）和 QEMU（通用系统模拟器），在教学可视化方面做了针对性优化。
+
+\vspace{1cm}
+
+\section{项目目标与当前进展}\label{sec:goals}
+
+\subsection{总体目标}
+
+本项目的总体目标是实现一个基于 RISC-V 指令集的多周期/流水线双模式 CPU 模拟器。该模拟器应具备执行 RISC-V RV32I 基础指令集的能力，支持多周期和流水线两种执行模式切换，能够可视化展示流水线执行过程，支持汇编程序输入和执行，并提供外设仿真接口。
+
+后续可在该平台上进行多方向拓展：向 RISC-V 64 位架构扩展、继续扩展指令集和系统能力、提升可视化与分析能力。
+
+\subsection{当前完成状态}
+
+本项目已完成以下开发工作：
+
+\begin{enumerate}
+\item \textbf{项目框架搭建}：完成前后端分离架构设计，C++ 后端与 React 前端均已建立项目结构
+\item \textbf{RV32I 指令集实现}：完成 RISC-V 基础整数指令集全部 37 条指令，包括算术、逻辑、移位、比较、内存访问、分支跳转、控制寄存器等类型
+\item \textbf{多周期与流水线双模式核心}：多周期模式实现 IF$\rightarrow$ID$\rightarrow$EX$\rightarrow$MEM$\rightarrow$WB 五阶段顺序执行；流水线模式实现五级流水线重叠执行
+\item \textbf{冒险处理机制}：实现了数据冒险转发（Forwarding）机制、Load-Use 冒险检测与 stall 机制、静态分支预测（not taken）与 flush 机制
+\item \textbf{前端可视化界面}：实现数据通路面板、流水线时间轴、寄存器面板、内存视图、CPI/IPC 统计等功能，已稳定运行
+\item \textbf{前后端通信}：HTTP RPC 接口已完成，支持状态查询、指令执行、模式切换等操作
+\end{enumerate}
+
+\textbf{核心技术难点已解决}：流水线五级锁存器设计、数据转发路径、Load-Use 冒险停顿、分支冒险 flush 等关键机制均已实现并通过测试。
+
+\subsection{已实现功能}
+
+在核心功能方面，项目实现了 RV32I 基础指令集共 37 条指令，完成了多周期与流水线双模式架构。多周期模式指令按 IF$\rightarrow$ID$\rightarrow$EX$\rightarrow$MEM$\rightarrow$WB 顺序执行，单指令 5 周期；流水线模式实现五级流水线，支持指令重叠执行。项目实现了数据冒险转发机制（Forwarding），实现了 Load-Use 冒险检测与 stall 机制，并采用了静态"not taken"策略的分支预测。定义了四组流水线寄存器（IF/ID、ID/EX、EX/MEM、MEM/WB），存储指令、控制信号与 valid 标志位，标记流水线级指令有效性。
+
+在可视化功能方面，项目实现了流水线各阶段实时状态展示、寄存器文件实时监视、内存内容查看与修改、程序编辑器与汇编功能、CPI/IPC 性能统计功能，以及多周期与流水线模式运行效果对比。
+
+\vspace{1cm}
+
+\section{技术方案}\label{sec:tech}
+
+\subsection{整体架构}
+
+本项目采用前后端分离架构，通过 RPC 通信实现解耦。前端使用 React 构建可视化界面，负责界面展示与用户交互；后端使用 C++ 实现高性能模拟核心，涵盖指令解析、周期推进、流水线调度等核心逻辑。双方各自运行在不同进程，通过 HTTP + JSON 通信。
+
+\textbf{四层架构设计}：
+
+\begin{enumerate}[leftmargin=*, label={}]
+\item \textbf{模拟器核心层}：基于 RISC-V RV32I 指令集，实现五级流水线微体系结构，包含 IF/ID、ID/EX、EX/MEM、MEM/WB 四组流水线寄存器
+\item \textbf{多周期基线层}：实现多周期顺序执行模型作为对比基准，与流水线模式共用除流水线锁存器外的所有模块
+\item \textbf{通信接口层}：后端内嵌 HTTP 服务器（默认端口 18080），提供 RESTful 接口实现状态查询与指令控制
+\item \textbf{可视化前端层}：基于 React + Tailwind CSS 构建 Web 界面，实现数据通路、流水线时间轴、寄存器面板等可视化组件
+\end{enumerate}
+
+技术选型：后端 C++17、pplx::Task（异步）、nlohmann/json；前端 React 18、Ant Design、ECharts。
+
+CpuCore 抽象接口设计：多周期 CPU 与流水线 CPU 继承实现，Simulator 通过智能指针切换核心，共用 Memory 与 Bus 实例。
+
+\subsection{流水线五级锁存器设计}\label{sec:pipeline-regs}
+
+流水线锁存器是连接相邻流水级的状态寄存器，其设计直接影响流水线的正确性和可视化粒度。本项目定义了四组流水线寄存器：
+
+\begin{verbatim}
+struct PipelineRegisters {
+    // IF/ID
+    uint32 if_id_pc;
+    Instruction if_id_instruction;
+    bool if_id_valid;
+    // ID/EX
+    uint32 id_ex_pc;
+    Instruction id_ex_instruction;
+    int32 id_ex_alu_result;
+    int32 id_ex_reg_data1;
+    int32 id_ex_reg_data2;
+    bool id_ex_valid;
+    // EX/MEM
+    uint32 ex_mem_pc;
+    Instruction ex_mem_instruction;
+    int32 ex_mem_alu_result;
+    int32 ex_mem_mem_write_data;
+    bool ex_mem_mem_read;
+    bool ex_mem_mem_write;
+    bool ex_mem_valid;
+    // MEM/WB
+    uint32 mem_wb_pc;
+    Instruction mem_wb_instruction;
+    int32 mem_wb_alu_result;
+    int32 mem_wb_mem_data;
+    bool mem_wb_reg_write;
+    bool mem_wb_valid;
+};
+\end{verbatim}
+
+每一组寄存器保存其在流水线中流动的指令及相关控制信号。valid 标志位用于标记该流水线级是否包含有效指令（处理 stall/flush 时会将其清零）。
+
+\subsection{数据冒险与转发机制}\label{sec:forwarding}
+
+数据冒险（Data Hazard）指后续指令依赖于尚未写回的先前指令结果。在五级流水线中，由于指令重叠执行，EX/MEM 和 MEM/WB 阶段可能需要向 ID/EX 阶段转发数据。
+
+本项目的转发逻辑在 EX 阶段集中处理，通过 getForwardedOperand() 方法从后续阶段获取所需的操作数：
+
+\begin{itemize}
+\item \textbf{EX/MEM$\rightarrow$ID/EX 转发}：EX/MEM 阶段的指令刚完成 ALU 计算，其结果可立即转发给当前 EX 阶段
+\item \textbf{MEM/WB$\rightarrow$ID/EX 转发}：MEM/WB 阶段的数据来自 ALU 结果或内存读出值，按优先级次之转发
+\end{itemize}
+
+对于 Load 指令，由于内存数据在 MEM 阶段末尾才可用，Load-Use 冒险无法通过转发解决，必须插入一个 stall 周期，暂停 IF 和 ID 阶段的推进，等待 MEM 阶段的数据就绪。
+
+\subsection{分支冒险处理}\label{sec:branch-hazard}
+
+分支指令在 EX 阶段才能确定跳转条件（比流水线中其他指令晚一个周期）。本项目采用假设分支不跳转、发现跳转时 flush 的策略：
+
+\begin{enumerate}
+\item 取指阶段顺序取下一条指令（PC+4）
+\item EX 阶段计算出分支跳转目标地址和条件
+\item 若分支跳转，则设置 hazard\_signals.flush = true，通知 IF/ID 级在下一周期清空流水线锁存器，跳转到正确目标
+\end{enumerate}
+
+这种策略的优势是实现简单，适合教学场景；缺点是每次分支跳转都会损失 1 个周期。
+
+\subsection{CpuCore 抽象接口}\label{sec:cpu-core}
+
+为实现多周期和流水线模式共用大部分模块，本项目设计了 CpuCore 抽象基类作为统一接口：
+
+\begin{tabular}{|l|l|l|}
+\hline
+CpuCore（抽象基类） & CPU（多周期） & PipelinedCPU（流水线） \\[0.8ex] \hline
+virtual void step() & 推进一个阶段 & 推进整个流水线 \\[0.8ex] \hline
+virtual void reset() & 通用 reset & 额外重置 stage view 变量 \\[0.8ex] \hline
+virtual CpuStats getStats() & 多周期统计 & 流水线统计（含 stall/flush） \\[0.8ex] \hline
+virtual bool supportsTrueOverlapPipeline() & return false & return true \\ \hline
+\end{tabular}
+
+Simulator 持有 shared\_ptr<CpuCore> 指针，调用 setMode() 时通过 static pointer cast 切换指向，两个 CPU 核心共用同一份 Memory 和 Bus 实例。
+
+\subsection{前后端状态同步机制}\label{sec:sync}
+
+前端通过轮询（每 5 秒一次 + 操作后立即刷新）向 GET /get\_state 发送请求，后端将模拟器内部状态序列化为 JSON 格式返回。前端仅负责解析和渲染，不进行任何计算逻辑：
+
+\begin{itemize}
+\item \textbf{内存快照}：后端调用 Memory::getMemorySnapshot() 获取已写入的地址-值映射，前端按段（TEXT/DATA/STACK）分组展示
+\item \textbf{流水线锁存器}：后端将四组锁存器的 valid 位、PC 和解码后的指令文本传递给前端，用于高亮程序视图和渲染时间轴
+\item \textbf{统计信息}：cycles、instructions、stall count、flush count 等实时更新，前端据此计算 CPI = cycles / instructions
+\end{itemize}
+
+\subsection{C++ 后端模块}
+
+C++ 后端已完成 CPU、RegisterFile、Decoder、Memory、Assembler 和 RpcServer 等核心模块的开发。CPU 模块负责指令执行、流水线控制和冒险检测；RegisterFile 管理 32 个通用寄存器；Decoder 实现 RISC-V 指令解码；Memory 提供 256KB 物理内存模拟；Assembler 完成汇编到机器码转换；RpcServer 处理与前端的通信。UART 串口输出仿真已基础完成，Timer 定时器中断仿真待实现。
+
+\subsection{指令集支持}
+
+在指令集方面，RV32I 基础指令 37 条已全部完成，包括算术运算（add, sub, addi）、逻辑运算（and, or, xor, andi, ori, xori）、移位运算（sll, srl, sra, slli, srli, srai）、比较运算（slt, sltu, slti, sltiu）、内存访问（lw, sw, lb, lbu, lh, lhu, sh）、分支跳转（beq, bne, blt, bge, bltu, bgeu, jal, jalr）、伪指令（li, nop, halt）以及控制寄存器（lui, auipc）。
+
+RV32M 扩展指令（乘法除法）待实现，包括 mul/mulh/mulhu/mulhsu 和 div/divu/rem/remu。RV32V 向量指令作为加分项，待进行调研。
+
+\subsection{可视化与调试}
+
+流水线可视化界面能够识别读后写（RAW）等数据冒险和分支控制冒险，将其标红提示用户。RAW 通过转发尽量减少停顿，Load-Use 时才插入 stall；分支控制冒险通过 flush 解决。系统支持多周期和流水线模式运行效果对比，直观展示流水线性能收益。
+
+\vspace{1cm}
+
+\section{后续开发计划}\label{sec:future}
+
+\subsection{已完成的开发工作}
+
+本项目已完成以下开发工作：
+
+\begin{enumerate}
+\item 完成前后端分离架构设计与项目框架搭建
+\item 实现 RV32I 全部 37 条基础指令
+\item 完成多周期与流水线双模式 CPU 核心
+\item 实现数据冒险转发、Load-Use 停顿、分支冒险 flush 等机制
+\item 完成前端可视化界面开发
+\item 完成 HTTP RPC 通信接口
+\end{enumerate}
+
+\subsection{后续开发计划}
+
+本项目的后续开发计划如下：
+
+\begin{enumerate}
+\item 短期（1-2 周）：完成 RISC-V M 扩展（乘法除法指令）实现与测试
+\item 中期（3-4 周）：完善外设接口（Timer 中断、UART）并与 OS 课程联动
+\item 长期（5-8 周）：扩展指令集（RVI、RVM）或探索操作系统支持
+\end{enumerate}
+
+\subsection{开发路线图}
+
+后续开发路线如下：
+
+\begin{enumerate}
+\item 第 1-2 周：RISC-V M 扩展实现，完成 mul/div/rem 等指令及测试用例
+\item 第 3-4 周：外设接口完善（Timer 中断仿真），与操作系统实验联动
+\item 第 5-6 周：RVI 扩展调研实现或程序加载器设计
+\item 第 7-8 周：根据选择方向进行深入开发
+\end{enumerate}
+
+\vspace{1cm}
+
+\section{风险评估与应对}\label{sec:risk}
+
+M 扩展指令复杂度较高，实现周期较长，应对措施是优先实现 mul 指令验证框架后再逐步扩展。V 扩展规范复杂，学习成本较高，老师建议先尝试评估可行性后再决定。操作系统方向周期较长，可能无法在学期内完成，可作为加分项与 OS 课程联动。方向选择存在分歧时，组内应民主讨论决定。
+
+\vspace{1cm}
+
+\section{分工方案}\label{sec:tasks}
+
+当前分工已基本完成：组长负责 CPU 核心和流水线实现，组员 A 负责内存和外设模块，组员 B 负责前端开发和 RPC 通信。
+
+后续分工可根据选择的方向调整。方向一（指令集扩展）的分工为：组长负责 M 扩展乘法除法指令实现，组员 A 负责向量指令调研与原型，组员 B 负责测试用例与性能验证。
+
+方向二（操作系统）的分工为：组长负责程序加载器和系统调用，组员 A 负责内存管理与分页机制，组员 B 负责前端适配和文件系统。
+
+\vspace{1cm}
+
+\section{预期成果}
+
+\subsection{代码成果}
+
+项目预期代码成果包括：C++ 模拟器核心（约 4000 行）、React 前端应用（约 2000 行）以及完整技术文档。
+
+\subsection{运行效果}
+
+项目完成后应能实现以下运行效果：支持汇编程序输入和执行，可视化展示流水线各阶段，实时显示寄存器、内存状态，多周期与流水线模式可切换对比，以及外设输出模拟。
+
+\subsection{文档成果}
+
+项目文档成果包括：开题报告、技术设计文档、结题报告和演示视频。
+
+\vspace{1cm}
+
+\section{参考资料}\label{sec:ref}
+
+\begin{enumerate}[leftmargin=*, label={[\arabic*]}]
+\item Morton Borup Petersen. Ripes -- A RISC-V processor simulator and framework for cache, branch prediction and ISA visualization[EB/OL]. GitHub, 2021.
+\item RISC-V International. The RISC-V Instruction Set Manual, Volume I: Unprivileged ISA[EB/OL]. 2024.
+\item David A. Patterson, John L. Hennessy. Computer Organization and Design: RISC-V Edition -- The Hardware Software Interface[M]. 2nd ed. Morgan Kaufmann, 2021.
+\item William Stallings. Computer Organization and Architecture: Designing for Performance[M]. 11th ed. Pearson, 2022.
+\item RISC-V Software Ecosystem. Spike RISC-V ISA Simulator[EB/OL]. GitHub.
+\item QEMU Project. QEMU -- The FAST! processor emulator[EB/OL].
+\item 《计算机系统结构》课程改革方案
+\item 《计算机组成与设计：硬件/软件接口》RISC-V 版
+\end{enumerate}
+
+\vspace{2cm}
+
+\begin{center}
+\textbf{撰写日期：2026 年 3 月}
+\end{center}
+
+\end{document}

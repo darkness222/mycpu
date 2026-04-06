@@ -202,6 +202,15 @@ std::string Decoder::disassemble(const Instruction& instr) const {
                     case 0x25: op = "sra"; break;
                     case 0x06: op = "or"; break;
                     case 0x07: op = "and"; break;
+                    // M extension (funct7=0x01 -> high bits set)
+                    case 0x08: op = "mul"; break;      // funct7=0x01, funct3=0x0
+                    case 0x09: op = "mulh"; break;     // funct7=0x01, funct3=0x1
+                    case 0x0A: op = "mulhsu"; break;   // funct7=0x01, funct3=0x2
+                    case 0x0B: op = "mulhu"; break;    // funct7=0x01, funct3=0x3
+                    case 0x0C: op = "div"; break;      // funct7=0x01, funct3=0x4
+                    case 0x0D: op = "divu"; break;     // funct7=0x01, funct3=0x5
+                    case 0x0E: op = "rem"; break;      // funct7=0x01, funct3=0x6
+                    case 0x0F: op = "remu"; break;     // funct7=0x01, funct3=0x7
                     default: op = "add"; break;
                 }
                 oss << op << " x" << (int)instr.rd << ", x" << (int)instr.rs1
@@ -215,11 +224,28 @@ std::string Decoder::disassemble(const Instruction& instr) const {
                         oss << "ebreak";
                     } else if (instr.raw == 0x00000073) {
                         oss << "ecall";
+                    } else if (instr.raw == 0x30200073) {
+                        oss << "mret";
                     } else {
                         oss << "system";
                     }
                 } else {
-                    oss << "csrrw x" << (int)instr.rd << ", csr, x" << (int)instr.rs1;
+                    const uint16 csr = static_cast<uint16>(instr.imm & 0xFFF);
+                    switch (instr.funct3) {
+                        case 0x1: oss << "csrrw"; break;
+                        case 0x2: oss << "csrrs"; break;
+                        case 0x3: oss << "csrrc"; break;
+                        case 0x5: oss << "csrrwi"; break;
+                        case 0x6: oss << "csrrsi"; break;
+                        case 0x7: oss << "csrrci"; break;
+                        default: oss << "csr"; break;
+                    }
+                    oss << " x" << (int)instr.rd << ", 0x" << std::hex << csr;
+                    if (instr.funct3 >= 0x5) {
+                        oss << ", " << std::dec << (int)instr.rs1;
+                    } else {
+                        oss << ", x" << std::dec << (int)instr.rs1;
+                    }
                 }
             }
             break;

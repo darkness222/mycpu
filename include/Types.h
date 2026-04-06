@@ -10,7 +10,7 @@
 
 namespace mycpu {
 
-// 基本类型别名
+// 鍩烘湰绫诲瀷鍒悕
 using int8 = int8_t;
 using int16 = int16_t;
 using int32 = int32_t;
@@ -20,29 +20,29 @@ using uint16 = uint16_t;
 using uint32 = uint32_t;
 using uint64 = uint64_t;
 
-// 地址类型
+// 鍦板潃绫诲瀷
 using Address = uint32_t;
 using Word = uint32_t;
 using HalfWord = uint16_t;
 using Byte = uint8_t;
 
-// 通用寄存器数量 (RISC-V 标准)
+// 閫氱敤瀵勫瓨鍣ㄦ暟閲?(RISC-V 鏍囧噯)
 constexpr size_t NUM_REGISTERS = 32;
 
-// 内存大小 (16KB)
+// Memory size
 constexpr size_t MEMORY_SIZE = 256 * 1024;
 
-// 内存区域定义
+// Memory segment definition
 enum class MemorySegment : uint8_t {
-    TEXT = 0,    // 代码段
-    DATA = 1,    // 数据段
-    STACK = 2,   // 栈段
-    HEAP = 3,    // 堆段
-    MMIO = 4,    // 内存映射IO
+    TEXT = 0,    // 浠ｇ爜娈?
+    DATA = 1,    // 鏁版嵁娈?
+    STACK = 2,   // 鏍堟
+    HEAP = 3,    // 鍫嗘
+    MMIO = 4,    // Memory-mapped IO
     OTHER = 5
 };
 
-// 执行状态
+// 鎵ц鐘舵€?
 enum class CpuState : uint8_t {
     RUNNING = 0,
     HALTED = 1,
@@ -51,7 +51,7 @@ enum class CpuState : uint8_t {
     INTERRUPT = 4
 };
 
-// 指令操作码 (简化版 RISC-V I 型)
+// 鎸囦护鎿嶄綔鐮?(绠€鍖栫増 RISC-V I 鍨?
 enum class Opcode : uint8_t {
     LOAD = 0x03,
     FENCE = 0x0F,
@@ -64,10 +64,10 @@ enum class Opcode : uint8_t {
     OP_IMM = 0x13,
     OP = 0x33,
     SYSTEM = 0x73,
-    HALT = 0xFF  // 自定义停机指令
+    HALT = 0xFF  // Custom halt instruction
 };
 
-// 流水线阶段
+// Pipeline stage
 enum class PipelineStage : uint8_t {
     FETCH = 0,
     DECODE = 1,
@@ -87,7 +87,7 @@ enum class ExecMode : uint8_t {
     ELF = 2
 };
 
-// 异常类型
+// 寮傚父绫诲瀷
 enum class ExceptionType : uint8_t {
     NONE = 0,
     ILLEGAL_INSTRUCTION = 1,
@@ -100,21 +100,21 @@ enum class ExceptionType : uint8_t {
     BREAKPOINT = 8
 };
 
-// 指令结构
+// 鎸囦护缁撴瀯
 struct Instruction {
     Opcode opcode;
-    uint32 raw;              // 原始32位编码
-    uint32 pc;               // 指令地址
+    uint32 raw;              // 鍘熷32浣嶇紪鐮?
+    uint32 pc;               // 鎸囦护鍦板潃
 
-    // 解码字段
-    uint8 rd;                // 目标寄存器
-    uint8 rs1;               // 源寄存器1
-    uint8 rs2;               // 源寄存器2
-    uint8 funct3;             // 功能码
-    uint8 funct7;             // 扩展功能码
-    int32 imm;                // 立即数
+    // 瑙ｇ爜瀛楁
+    uint8 rd;                // 鐩爣瀵勫瓨鍣?
+    uint8 rs1;               // 婧愬瘎瀛樺櫒1
+    uint8 rs2;               // 婧愬瘎瀛樺櫒2
+    uint8 funct3;             // 鍔熻兘鐮?
+    uint8 funct7;             // 鎵╁睍鍔熻兘鐮?
+    int32 imm;                // 绔嬪嵆鏁?
 
-    // 指令文本（用于显示）
+    // 鎸囦护鏂囨湰锛堢敤浜庢樉绀猴級
     std::string mnemonic;
     std::string disassembly;
 
@@ -122,12 +122,14 @@ struct Instruction {
                     rd(0), rs1(0), rs2(0), funct3(0), funct7(0), imm(0) {}
 };
 
-// 流水线寄存器
+// Pipeline registers
 struct PipelineRegisters {
     // IF/ID
     uint32 if_id_pc;
     Instruction if_id_instruction;
     bool if_id_valid;
+    bool if_id_predicted_taken;
+    uint32 if_id_predicted_target;
 
     // ID/EX
     uint32 id_ex_pc;
@@ -136,6 +138,8 @@ struct PipelineRegisters {
     int32 id_ex_reg_data1;
     int32 id_ex_reg_data2;
     bool id_ex_valid;
+    bool id_ex_predicted_taken;
+    uint32 id_ex_predicted_target;
 
     // EX/MEM
     uint32 ex_mem_pc;
@@ -154,12 +158,36 @@ struct PipelineRegisters {
     bool mem_wb_reg_write;
     bool mem_wb_valid;
 
-    PipelineRegisters() : if_id_pc(0), id_ex_pc(0), ex_mem_pc(0), mem_wb_pc(0),
-                          if_id_valid(false), id_ex_valid(false),
-                          ex_mem_valid(false), mem_wb_valid(false) {}
+    PipelineRegisters()
+        : if_id_pc(0),
+          if_id_instruction(),
+          if_id_valid(false),
+          if_id_predicted_taken(false),
+          if_id_predicted_target(0),
+          id_ex_pc(0),
+          id_ex_instruction(),
+          id_ex_alu_result(0),
+          id_ex_reg_data1(0),
+          id_ex_reg_data2(0),
+          id_ex_valid(false),
+          id_ex_predicted_taken(false),
+          id_ex_predicted_target(0),
+          ex_mem_pc(0),
+          ex_mem_instruction(),
+          ex_mem_alu_result(0),
+          ex_mem_mem_write_data(0),
+          ex_mem_mem_read(false),
+          ex_mem_mem_write(false),
+          ex_mem_valid(false),
+          mem_wb_pc(0),
+          mem_wb_instruction(),
+          mem_wb_alu_result(0),
+          mem_wb_mem_data(0),
+          mem_wb_reg_write(false),
+          mem_wb_valid(false) {}
 };
 
-// CPU 统计信息
+// CPU 缁熻淇℃伅
 struct CpuStats {
     uint64 cycle_count;
     uint64 instruction_count;
@@ -167,24 +195,34 @@ struct CpuStats {
     uint64 flush_count;
     uint64 branch_taken;
     uint64 branch_not_taken;
+    uint64 branch_mispredict_count;
+    uint64 cache_hits;
+    uint64 cache_misses;
+    uint64 instruction_cache_hits;
+    uint64 instruction_cache_misses;
+    uint64 data_cache_hits;
+    uint64 data_cache_misses;
 
     CpuStats() : cycle_count(0), instruction_count(0), stall_count(0),
-                 flush_count(0), branch_taken(0), branch_not_taken(0) {}
+                 flush_count(0), branch_taken(0), branch_not_taken(0),
+                 branch_mispredict_count(0), cache_hits(0), cache_misses(0),
+                 instruction_cache_hits(0), instruction_cache_misses(0),
+                 data_cache_hits(0), data_cache_misses(0) {}
 };
 
-// 冒险检测信号
+// Hazard signals
 struct HazardSignals {
     bool stall;
     bool flush;
-    uint8 forward_from_exmem;   // EX/MEM 向前传递
-    uint8 forward_from_memwb;  // MEM/WB 向前传递
+    uint8 forward_from_exmem;   // EX/MEM 鍚戝墠浼犻€?
+    uint8 forward_from_memwb;  // MEM/WB 鍚戝墠浼犻€?
     std::string description;
 
     HazardSignals() : stall(false), flush(false),
                       forward_from_exmem(0), forward_from_memwb(0) {}
 };
 
-// 外设状态
+// 澶栬鐘舵€?
 struct PeripheralState {
     std::string uart_buffer;
     uint32 timer_value;
@@ -224,7 +262,7 @@ struct CsrState {
           mepc(0), mcause(0), mtval(0) {}
 };
 
-// 模拟器状态（用于前端展示）
+// 妯℃嫙鍣ㄧ姸鎬侊紙鐢ㄤ簬鍓嶇灞曠ず锛?
 struct SimulatorState {
     CpuState state;
     SimulationMode mode;
@@ -243,7 +281,7 @@ struct SimulatorState {
     bool true_pipeline;
     std::string mode_note;
 
-    // 已解码的流水线指令文本
+    // Decoded pipeline instruction text
     std::string ifid_text;
     std::string idex_text;
     std::string exmem_text;
@@ -276,7 +314,7 @@ struct SimulatorState {
     std::string toJson(const void* memory_ptr = nullptr) const;
 };
 
-// 指令描述
+// 鎸囦护鎻忚堪
 struct InstructionInfo {
     std::string name;
     std::string format;
@@ -286,10 +324,10 @@ struct InstructionInfo {
     uint8 funct7;
 };
 
-// 支持的指令列表
+// 鏀寔鐨勬寚浠ゅ垪琛?
 const std::vector<InstructionInfo>& getSupportedInstructions();
 
-// 内联实现
+// Inline implementation
 inline SimulatorState::SimulatorState()
     : state(CpuState::HALTED),
       mode(SimulationMode::MULTI_CYCLE),
@@ -451,7 +489,14 @@ inline std::string SimulatorState::toJson(const void* memory_ptr) const {
         << ",\"stalls\":" << stats.stall_count
         << ",\"flushes\":" << stats.flush_count
         << ",\"branchTaken\":" << stats.branch_taken
-        << ",\"branchNotTaken\":" << stats.branch_not_taken << "}";
+        << ",\"branchNotTaken\":" << stats.branch_not_taken
+        << ",\"branchMispredicts\":" << stats.branch_mispredict_count
+        << ",\"cacheHits\":" << stats.cache_hits
+        << ",\"cacheMisses\":" << stats.cache_misses
+        << ",\"instructionCacheHits\":" << stats.instruction_cache_hits
+        << ",\"instructionCacheMisses\":" << stats.instruction_cache_misses
+        << ",\"dataCacheHits\":" << stats.data_cache_hits
+        << ",\"dataCacheMisses\":" << stats.data_cache_misses << "}";
 
     oss << ",\"stageIndex\":" << (int)current_stage;
     oss << ",\"stage\":\"" << (current_stage == PipelineStage::FETCH ? "IF" :
@@ -504,20 +549,28 @@ inline std::string SimulatorState::toJson(const void* memory_ptr) const {
 
 inline const std::vector<InstructionInfo>& getSupportedInstructions() {
     static std::vector<InstructionInfo> instructions = {
-        {"add", "rd, rs1, rs2", "加法", Opcode::OP, 0, 0},
-        {"sub", "rd, rs1, rs2", "减法", Opcode::OP, 0, 0x20},
-        {"addi", "rd, rs1, imm", "立即数加法", Opcode::OP_IMM, 0, 0},
-        {"and", "rd, rs1, rs2", "按位与", Opcode::OP, 7, 0},
-        {"or", "rd, rs1, rs2", "按位或", Opcode::OP, 6, 0},
-        {"xor", "rd, rs1, rs2", "按位异或", Opcode::OP, 4, 0},
-        {"lw", "rd, offset(rs1)", "加载字", Opcode::LOAD, 2, 0},
-        {"sw", "rs2, offset(rs1)", "存储字", Opcode::STORE, 2, 0},
-        {"beq", "rs1, rs2, offset", "相等分支", Opcode::BRANCH, 0, 0},
-        {"bne", "rs1, rs2, offset", "不等分支", Opcode::BRANCH, 1, 0},
-        {"lui", "rd, imm", "加载高位", Opcode::LUI, 0, 0},
-        {"auipc", "rd, imm", "PC加立即数", Opcode::AUIPC, 0, 0},
-        {"jal", "rd, offset", "跳转并链接", Opcode::JAL, 0, 0},
-        {"jalr", "rd, rs1, offset", "间接跳转", Opcode::JALR, 0, 0},
+        {"add", "rd, rs1, rs2", "add", Opcode::OP, 0, 0},
+        {"sub", "rd, rs1, rs2", "sub", Opcode::OP, 0, 0x20},
+        {"addi", "rd, rs1, imm", "addi", Opcode::OP_IMM, 0, 0},
+        {"and", "rd, rs1, rs2", "and", Opcode::OP, 7, 0},
+        {"or", "rd, rs1, rs2", "or", Opcode::OP, 6, 0},
+        {"xor", "rd, rs1, rs2", "xor", Opcode::OP, 4, 0},
+        {"lw", "rd, offset(rs1)", "lw", Opcode::LOAD, 2, 0},
+        {"sw", "rs2, offset(rs1)", "sw", Opcode::STORE, 2, 0},
+        {"beq", "rs1, rs2, offset", "beq", Opcode::BRANCH, 0, 0},
+        {"bne", "rs1, rs2, offset", "bne", Opcode::BRANCH, 1, 0},
+        {"lui", "rd, imm", "lui", Opcode::LUI, 0, 0},
+        {"auipc", "rd, imm", "auipc", Opcode::AUIPC, 0, 0},
+        {"jal", "rd, offset", "jal", Opcode::JAL, 0, 0},
+        {"jalr", "rd, rs1, offset", "jalr", Opcode::JALR, 0, 0},
+        {"mul", "rd, rs1, rs2", "mul", Opcode::OP, 0, 0x01},
+        {"mulh", "rd, rs1, rs2", "mulh", Opcode::OP, 1, 0x01},
+        {"mulhsu", "rd, rs1, rs2", "mulhsu", Opcode::OP, 2, 0x01},
+        {"mulhu", "rd, rs1, rs2", "mulhu", Opcode::OP, 3, 0x01},
+        {"div", "rd, rs1, rs2", "div", Opcode::OP, 4, 0x01},
+        {"divu", "rd, rs1, rs2", "divu", Opcode::OP, 5, 0x01},
+        {"rem", "rd, rs1, rs2", "rem", Opcode::OP, 6, 0x01},
+        {"remu", "rd, rs1, rs2", "remu", Opcode::OP, 7, 0x01},
     };
     return instructions;
 }

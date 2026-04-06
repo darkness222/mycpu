@@ -93,7 +93,7 @@ std::unordered_map<Address, uint32> Memory::getMemorySnapshot() const {
 }
 
 MemorySegment Memory::getSegment(Address addr) const {
-    if (addr >= constants::TEXT_START && addr <= constants::TEXT_END) {
+    if (addr <= constants::TEXT_END) {
         return MemorySegment::TEXT;
     } else if (addr >= constants::DATA_START && addr <= constants::DATA_END) {
         return MemorySegment::DATA;

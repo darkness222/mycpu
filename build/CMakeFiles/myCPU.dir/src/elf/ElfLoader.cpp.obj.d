@@ -1,7 +1,7 @@
 CMakeFiles/myCPU.dir/src/elf/ElfLoader.cpp.obj: \
- D:\study\ripes\mycpu\src\elf\ElfLoader.cpp \
- D:\study\ripes\mycpu\src\elf\ElfLoader.h \
- D:/study/ripes/mycpu/include/Types.h \
+ D:\Code\Project\mycpufinal\mycpu\src\elf\ElfLoader.cpp \
+ D:\Code\Project\mycpufinal\mycpu\src\elf\ElfLoader.h \
+ D:/Code/Project/mycpufinal/mycpu/include/Types.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/cstdint \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32/bits/c++config.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/x86_64-w64-mingw32/bits/os_defines.h \
@@ -165,9 +165,9 @@ CMakeFiles/myCPU.dir/src/elf/ElfLoader.cpp.obj: \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/optional \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/enable_special_members.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/bits/unordered_map.h \
- D:/study/ripes/mycpu/src/memory/Memory.h \
- D:/study/ripes/mycpu/include/Constants.h \
- D:/study/ripes/mycpu/src/bus/Bus.h \
+ D:/Code/Project/mycpufinal/mycpu/src/memory/Memory.h \
+ D:/Code/Project/mycpufinal/mycpu/include/Constants.h \
+ D:/Code/Project/mycpufinal/mycpu/src/bus/Bus.h \
  D:/mingw64/lib/gcc/x86_64-w64-mingw32/8.1.0/include/c++/cstring \
  D:/mingw64/x86_64-w64-mingw32/include/string.h \
  D:/mingw64/x86_64-w64-mingw32/include/sec_api/string_s.h

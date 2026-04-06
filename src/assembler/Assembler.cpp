@@ -1,4 +1,4 @@
-#include "Assembler.h"
+﻿#include "Assembler.h"
 #include <algorithm>
 #include <cctype>
 #include <sstream>
@@ -34,7 +34,7 @@ Assembler::AssembledProgram Assembler::assemble(const std::string& source) {
         if (!parsed.label.empty()) {
             if (label_positions.find(parsed.label) != label_positions.end()) {
                 std::ostringstream oss;
-                oss << "第 " << parsed.line_number << " 行：标签 '" << parsed.label << "' 已定义";
+                oss << "Line " << parsed.line_number << ": duplicate label '" << parsed.label << "'";
                 result.errors.push_back(oss.str());
                 result.success = false;
             }
@@ -42,7 +42,21 @@ Assembler::AssembledProgram Assembler::assemble(const std::string& source) {
         }
 
         if (!parsed.mnemonic.empty()) {
-            pc += 4;
+            // 婵″倹鐏夐弰?li 閹稿洣鎶ら敍灞藉讲閼虫垝绱扮悮顐㈢潔瀵偓娑撹桨琚遍弶鈩冨瘹娴犮倧绱檒ui + addi閿?
+            if (parsed.mnemonic == "li") {
+                // 鐟欙絾鐎界粩瀣祮閺佸府绱濋懟銉ㄧТ閸?12-bit 閺堝顑侀崣鐤瘱閸ヨ揪绱濋崚娆忓窗閻劋琚遍弶鈩冨瘹娴?
+                int32 imm = 0;
+                if (parsed.operands.size() >= 2) {
+                    imm = parseImmediate(parsed.operands[1]);
+                }
+                if (imm >= -2048 && imm <= 2047) {
+                    pc += 4;
+                } else {
+                    pc += 8;
+                }
+            } else {
+                pc += 4;
+            }
         }
     }
 
@@ -52,15 +66,36 @@ Assembler::AssembledProgram Assembler::assemble(const std::string& source) {
 
         if (!parsed.mnemonic.empty()) {
             try {
-                uint32 encoded = encodeInstruction(parsed, label_positions, instr_pc);
-                result.instructions.push_back(encoded);
+                // Special-case: expand "li" into lui+addi when immediate doesn't fit 12-bit
+                if (parsed.mnemonic == "li") {
+                    uint8 rd = parseRegister(parsed.operands[0]);
+                    int32 imm = parseImmediate(parsed.operands[1]);
+                    // If imm fits into signed 12-bit, emit a single addi
+                    if (imm >= -2048 && imm <= 2047) {
+                        uint32 enc = encodeIType("addi", rd, 0, imm);
+                        result.instructions.push_back(enc);
+                        instr_pc += 4;
+                    } else {
+                        // Compute upper 20 bits for LUI with correct sign adjustment
+                        int32 hi = (imm + (1 << 11)) >> 12; // round to nearest for correct lower sign
+                        int32 lo = imm - (hi << 12);
+                        uint32 enc_lui = encodeUType("lui", rd, hi << 12);
+                        uint32 enc_addi = encodeIType("addi", rd, rd, lo);
+                        result.instructions.push_back(enc_lui);
+                        result.instructions.push_back(enc_addi);
+                        instr_pc += 8;
+                    }
+                } else {
+                    uint32 encoded = encodeInstruction(parsed, label_positions, instr_pc);
+                    result.instructions.push_back(encoded);
+                    instr_pc += 4;
+                }
             } catch (const std::exception& e) {
                 std::ostringstream oss;
-                oss << "第 " << parsed.line_number << " 行：编码错误 - " << e.what();
+                oss << "Line " << parsed.line_number << ": encode error - " << e.what();
                 result.errors.push_back(oss.str());
                 result.success = false;
             }
-            instr_pc += 4;
         }
     }
 
@@ -80,7 +115,7 @@ Assembler::ParsedLine Assembler::parseLine(const std::string& raw_line, int line
     result.line_number = line_number;
 
     std::string line = raw_line;
-    // 移除 Windows 行尾的 \r
+    // 缁夊娅?Windows 鐞涘苯鐔惃?\r
     while (!line.empty() && line.back() == '\r') line.pop_back();
     std::transform(line.begin(), line.end(), line.begin(), ::tolower);
 
@@ -161,6 +196,15 @@ uint32 Assembler::encodeInstruction(const ParsedLine& parsed,
         return encodeRType(mnemonic, rd, rs1, rs2);
     }
 
+    // R-type M-extension
+    if (mnemonic == "mul" || mnemonic == "mulh" || mnemonic == "mulhsu" || mnemonic == "mulhu" ||
+        mnemonic == "div" || mnemonic == "divu" || mnemonic == "rem" || mnemonic == "remu") {
+        uint8 rd = parseRegister(parsed.operands[0]);
+        uint8 rs1 = parseRegister(parsed.operands[1]);
+        uint8 rs2 = parseRegister(parsed.operands[2]);
+        return encodeRType(mnemonic, rd, rs1, rs2);
+    }
+
     if (mnemonic == "addi" || mnemonic == "slli" || mnemonic == "slti" || mnemonic == "sltiu" ||
         mnemonic == "xori" || mnemonic == "srli" || mnemonic == "srai" || mnemonic == "ori" ||
         mnemonic == "andi") {
@@ -233,6 +277,24 @@ uint32 Assembler::encodeInstruction(const ParsedLine& parsed,
         return 0x00100073;
     }
 
+    if (mnemonic == "mret") {
+        return 0x30200073;
+    }
+
+    if (mnemonic == "csrrw" || mnemonic == "csrrs" || mnemonic == "csrrc") {
+        uint8 rd = parseRegister(parsed.operands[0]);
+        uint16 csr = parseCsrAddress(parsed.operands[1]);
+        uint8 rs1 = parseRegister(parsed.operands[2]);
+        return encodeSystemType(mnemonic, rd, rs1, csr);
+    }
+
+    if (mnemonic == "csrrwi" || mnemonic == "csrrsi" || mnemonic == "csrrci") {
+        uint8 rd = parseRegister(parsed.operands[0]);
+        uint16 csr = parseCsrAddress(parsed.operands[1]);
+        uint8 zimm = static_cast<uint8>(parseImmediate(parsed.operands[2]) & 0x1F);
+        return encodeSystemType(mnemonic, rd, zimm, csr);
+    }
+
     if (mnemonic == "li") {
         uint8 rd = parseRegister(parsed.operands[0]);
         int32 imm = parseImmediate(parsed.operands[1]);
@@ -247,7 +309,7 @@ uint32 Assembler::encodeInstruction(const ParsedLine& parsed,
         return 0x000000FF;
     }
 
-    throw std::runtime_error("未知指令: " + mnemonic);
+    throw std::runtime_error("Unknown instruction: " + mnemonic);
 }
 
 uint32 Assembler::encodeRType(const std::string& mnemonic, uint8 rd, uint8 rs1, uint8 rs2) {
@@ -264,6 +326,16 @@ uint32 Assembler::encodeRType(const std::string& mnemonic, uint8 rd, uint8 rs1, 
     else if (mnemonic == "sra") { funct3 = 5; funct7 = 0x20; }
     else if (mnemonic == "or") { funct3 = 6; funct7 = 0; }
     else if (mnemonic == "and") { funct3 = 7; funct7 = 0; }
+
+    // M-extension operations use funct7 = 0x01
+    else if (mnemonic == "mul") { funct3 = 0; funct7 = 0x01; }
+    else if (mnemonic == "mulh") { funct3 = 1; funct7 = 0x01; }
+    else if (mnemonic == "mulhsu") { funct3 = 2; funct7 = 0x01; }
+    else if (mnemonic == "mulhu") { funct3 = 3; funct7 = 0x01; }
+    else if (mnemonic == "div") { funct3 = 4; funct7 = 0x01; }
+    else if (mnemonic == "divu") { funct3 = 5; funct7 = 0x01; }
+    else if (mnemonic == "rem") { funct3 = 6; funct7 = 0x01; }
+    else if (mnemonic == "remu") { funct3 = 7; funct7 = 0x01; }
 
     return (funct7 << 25) | (rs2 << 20) | (rs1 << 15) | (funct3 << 12) | (rd << 7) | 0x33;
 }
@@ -336,6 +408,7 @@ uint32 Assembler::encodeUType(const std::string& mnemonic, uint8 rd, int32 imm) 
 }
 
 uint32 Assembler::encodeJType(const std::string& mnemonic, uint8 rd, int32 imm) {
+    (void)mnemonic;
     uint32 imm_encoded = static_cast<uint32>(imm) & 0x1FFFFF;
     uint32 bit19_12 = (imm_encoded >> 12) & 0xFF;
     uint32 bit11 = (imm_encoded >> 11) & 0x1;
@@ -345,9 +418,20 @@ uint32 Assembler::encodeJType(const std::string& mnemonic, uint8 rd, int32 imm) 
            (bit19_12 << 12) | (rd << 7) | 0x6F;
 }
 
+uint32 Assembler::encodeSystemType(const std::string& mnemonic, uint8 rd, uint8 rs1, uint16 csr) {
+    uint8 funct3 = 0;
+    if (mnemonic == "csrrw") funct3 = 0x1;
+    else if (mnemonic == "csrrs") funct3 = 0x2;
+    else if (mnemonic == "csrrc") funct3 = 0x3;
+    else if (mnemonic == "csrrwi") funct3 = 0x5;
+    else if (mnemonic == "csrrsi") funct3 = 0x6;
+    else if (mnemonic == "csrrci") funct3 = 0x7;
+    return (static_cast<uint32>(csr) << 20) | (rs1 << 15) | (funct3 << 12) | (rd << 7) | 0x73;
+}
+
 uint8 Assembler::parseRegister(const std::string& reg) {
     if (reg.empty()) {
-        throw std::runtime_error("寄存器为空");
+        throw std::runtime_error("Register operand is empty");
     }
 
     std::string r = reg;
@@ -356,7 +440,7 @@ uint8 Assembler::parseRegister(const std::string& reg) {
     if (r[0] == 'x' || r[0] == 'r') {
         int num = std::stoi(r.substr(1));
         if (num < 0 || num > 31) {
-            throw std::runtime_error("无效寄存器编号: " + r);
+            throw std::runtime_error("Invalid register index: " + r);
         }
         return static_cast<uint8>(num);
     }
@@ -377,7 +461,22 @@ uint8 Assembler::parseRegister(const std::string& reg) {
         return it->second;
     }
 
-    throw std::runtime_error("未知寄存器: " + reg);
+    throw std::runtime_error("Unknown register name: " + reg);
+}
+
+uint16 Assembler::parseCsrAddress(const std::string& csr_str) {
+    std::string s = csr_str;
+    std::transform(s.begin(), s.end(), s.begin(), ::tolower);
+    static const std::unordered_map<std::string, uint16> csr_map = {
+        {"mstatus", 0x300}, {"mie", 0x304}, {"mtvec", 0x305}, {"mepc", 0x341},
+        {"mcause", 0x342}, {"mtval", 0x343}, {"mip", 0x344}, {"cycle", 0xC00},
+        {"instret", 0xC02}, {"mcycle", 0xB00}, {"minstret", 0xB02}
+    };
+    auto it = csr_map.find(s);
+    if (it != csr_map.end()) {
+        return it->second;
+    }
+    return static_cast<uint16>(parseImmediate(csr_str) & 0xFFF);
 }
 
 int32 Assembler::parseImmediate(const std::string& imm_str) {

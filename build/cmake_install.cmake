@@ -1,4 +1,4 @@
-# Install script for directory: D:/study/ripes/mycpu
+# Install script for directory: D:/Code/Project/mycpufinal/mycpu
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -45,5 +45,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "D:/study/ripes/mycpu/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "D:/Code/Project/mycpufinal/mycpu/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

@@ -38,7 +38,7 @@ bool ElfLoader::parseHeader() {
         return false;
     }
 
-    // 妫€鏌ユ満鍣ㄦ灦鏋?
+        // Ensure segment data is loaded with 4-byte alignment.
     std::memcpy(&elf_header_, elf_data_.data(), sizeof(Elf32_Ehdr));
 
     if (elf_header_.e_machine != ElfConst::EM_RISCV) {
@@ -107,6 +107,7 @@ bool ElfLoader::parseSectionHeaders() {
 
 ElfLoadResult ElfLoader::loadToMemory(std::shared_ptr<Memory> memory,
                                       std::shared_ptr<Bus> bus) {
+    (void)bus;
     ElfLoadResult result;
     result.success = false;
     result.entry_point = 0;
@@ -154,7 +155,7 @@ ElfLoadResult ElfLoader::loadToMemory(std::shared_ptr<Memory> memory,
             }
         }
 
-        // ?????????????????? 4 ??????????
+        // Copy segment bytes into simulated memory.
         for (uint32 i = 0; i < phdr.p_filesz; ++i) {
             memory->writeByte(vaddr + i, elf_data_[phdr.p_offset + i]);
         }

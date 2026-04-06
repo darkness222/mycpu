@@ -38,9 +38,9 @@ void CPU::reset() {
     stats_ = CpuStats();
     hazard_signals_ = HazardSignals();
     trace_.clear();
-    trace_.push_back("系统已重置，准备执行指令。");
+    trace_.push_back("[CPU] reset complete, ready to execute");
 
-    // 初始化 CSR
+    // Reset CSR state
     csr_.setPrivilegeMode(PrivilegeMode::MACHINE);
     csr_.write(CSR::MSTATUS, (static_cast<uint32>(PrivilegeMode::MACHINE) << 11));
     csr_.write(CSR::MTVEC, constants::TRAP_VECTOR);
@@ -82,17 +82,14 @@ bool CPU::loadElf(const std::vector<uint8>& elf_data) {
         std::cout << "[CPU] Load to memory failed: " << result.error_message << std::endl;
         return false;
     }
-
-    // 设置入口点
-    pc_ = result.entry_point;
-    state_ = CpuState::RUNNING;
+    
     exec_mode_ = ExecMode::ELF;
     tohost_address_ = loader.getSectionAddress(".tohost");
     if (tohost_address_ == 0) {
         tohost_address_ = constants::RISCV_TEST_TOHOST_FALLBACK;
     }
 
-    // 设置栈指针
+    // Initialize stack pointer for ELF programs.
     registers_.write(constants::REG_SP, constants::DEFAULT_STACK_POINTER);
 
     std::ostringstream oss;
@@ -136,8 +133,8 @@ void CPU::loadProgram(const std::vector<uint32>& program, uint32 start_address) 
     current_stage_ = PipelineStage::FETCH;
 
     std::ostringstream oss;
-    oss << "程序已加载到地址 0x" << std::hex << start_address
-        << "，共 " << std::dec << program.size() << " 条指令。";
+    oss << "[CPU] program loaded at 0x" << std::hex << start_address
+        << " (" << std::dec << program.size() << " instructions)";
     trace_.push_back(oss.str());
 }
 
@@ -153,7 +150,7 @@ void CPU::step() {
     }
     syncPeripheralState();
 
-    // ===== 每周期检查中断 =====
+    // ===== 濮ｅ繐鎳嗛張鐔割梾閺屻儰鑵戦弬?=====
     if (state_ == CpuState::RUNNING) {
         if (checkAndTakeInterrupt()) {
             return;
@@ -205,22 +202,22 @@ void CPU::fetch() {
         pc_ += constants::RISCV_TEST_BASE;
     }
 
-    // ===== 处理 Flush（来自hazard检测或分支跳转）=====
+    // Handle pending flush from the previous cycle before fetching a new instruction.
     if (hazard_signals_.flush) {
         pipeline_regs_.if_id_valid = false;
         hazard_signals_.flush = false;
         stats_.flush_count++;
     }
 
-    // ===== 处理 Stall =====
+    // ===== 婢跺嫮鎮?Stall =====
     if (hazard_signals_.stall) {
         hazard_signals_.stall = false;
         stats_.stall_count++;
-        return;  // stall 时不取指，保持 IF/ID 寄存器不变
+        return;
     }
 
-    // ===== 取指 =====
-    // 注意：pc_由execute阶段更新（分支/跳转）或自动递增
+    // Fetch the next instruction. The execute stage may still redirect PC later
+    // if a branch or trap changes control flow.
     if ((pc_ & 0x3) != 0) {
         TrapInfo trap = trap_handler_.handleInstructionAddressMisaligned(pc_, pc_);
         handleTrap(trap);
@@ -245,17 +242,14 @@ void CPU::fetch() {
     fetch_view_pc_ = pc_;
     fetch_view_text_ = decoder_.disassemble(instr);
 
-    // 填入 IF/ID 流水线寄存器
     pipeline_regs_.if_id_pc = pc_;
     pipeline_regs_.if_id_instruction = instr;
     pipeline_regs_.if_id_valid = true;
 
-    // 取指完成后准备下一条指令地址
-    // 如果下一周期execute有分支跳转，会覆盖这个值
     pc_ += 4;
 
     std::ostringstream oss;
-    oss << "[IF] PC=0x" << std::hex << pipeline_regs_.if_id_pc << " 取出: " << instr.disassembly;
+    oss << "[IF] PC=0x" << std::hex << pipeline_regs_.if_id_pc << " fetch: " << instr.disassembly;
     trace_.push_back(oss.str());
 }
 
@@ -278,7 +272,7 @@ void CPU::decode() {
     pipeline_regs_.if_id_valid = false;
 
     std::ostringstream oss;
-    oss << "[ID] 译码: " << instr.disassembly
+    oss << "[ID] decode: " << instr.disassembly
         << " | rs1=x" << (int)instr.rs1 << "=" << reg_data1
         << " rs2=x" << (int)instr.rs2 << "=" << reg_data2;
     trace_.push_back(oss.str());
@@ -316,23 +310,20 @@ void CPU::execute() {
             break;
 
         case Opcode::JAL:
-            // JAL: 将返回地址(PC+4)写入rd，跳转到目标地址
-            // 注意：PC已在fetch阶段+4，这里需要覆盖为跳转目标
             alu_result = pipeline_regs_.id_ex_pc + 4;
             write_reg = instr.rd;
             write_value = alu_result;
             reg_write = true;
-            pc_ = pipeline_regs_.id_ex_pc + instr.imm;  // 覆盖fetch阶段的PC+4
+            pc_ = pipeline_regs_.id_ex_pc + instr.imm;
             branch_taken_ = true;
             break;
 
         case Opcode::JALR:
-            // JALR: 间接跳转
             alu_result = (operand1 + instr.imm) & ~1;
             write_reg = instr.rd;
             write_value = alu_result;
             reg_write = true;
-            pc_ = alu_result;  // 覆盖fetch阶段的PC+4
+            pc_ = alu_result;
             branch_taken_ = true;
             break;
 
@@ -352,10 +343,71 @@ void CPU::execute() {
             break;
 
         case Opcode::OP:
-            alu_result = alu(operand1, operand2, instr.funct3, instr.funct7 == 0x20);
-            write_reg = instr.rd;
-            write_value = alu_result;
-            reg_write = true;
+            if (instr.funct7 == 0x01) {
+                int32_t op1 = static_cast<int32_t>(operand1);
+                int32_t op2 = static_cast<int32_t>(operand2);
+                uint32_t uop1 = static_cast<uint32_t>(operand1);
+                uint32_t uop2 = static_cast<uint32_t>(operand2);
+                int32_t mresult = 0;
+                switch (instr.funct3) {
+                    case 0x0: { // mul (low 32 bits signed*signed)
+                        int64_t prod = static_cast<int64_t>(op1) * static_cast<int64_t>(op2);
+                        mresult = static_cast<int32_t>(static_cast<uint32_t>(prod & 0xFFFFFFFF));
+                        break;
+                    }
+                    case 0x1: { // mulh (high 32 bits signed*signed)
+                        int64_t prod = static_cast<int64_t>(op1) * static_cast<int64_t>(op2);
+                        mresult = static_cast<int32_t>(static_cast<uint32_t>(static_cast<uint64_t>(prod) >> 32));
+                        break;
+                    }
+                    case 0x2: { // mulhsu (high 32 bits signed*unsigned)
+                        int64_t s = static_cast<int64_t>(op1);
+                        uint64_t u = static_cast<uint64_t>(uop2);
+                        uint64_t prod = static_cast<uint64_t>(s < 0 ? static_cast<uint64_t>(static_cast<int64_t>(s)) : static_cast<uint64_t>(s)) * u;
+                        mresult = static_cast<int32_t>(static_cast<uint32_t>(prod >> 32));
+                        break;
+                    }
+                    case 0x3: { // mulhu (high 32 bits unsigned*unsigned)
+                        uint64_t prod = static_cast<uint64_t>(uop1) * static_cast<uint64_t>(uop2);
+                        mresult = static_cast<int32_t>(static_cast<uint32_t>(prod >> 32));
+                        break;
+                    }
+                    case 0x4: { // div (signed)
+                        if (op2 == 0) mresult = -1;
+                        else if (op1 == INT32_MIN && op2 == -1) mresult = op1;
+                        else mresult = static_cast<int32_t>(op1 / op2);
+                        break;
+                    }
+                    case 0x5: { // divu (unsigned)
+                        if (uop2 == 0) mresult = static_cast<int32_t>(-1);
+                        else mresult = static_cast<int32_t>(uop1 / uop2);
+                        break;
+                    }
+                    case 0x6: { // rem (signed)
+                        if (op2 == 0) mresult = op1;
+                        else if (op1 == INT32_MIN && op2 == -1) mresult = 0;
+                        else mresult = static_cast<int32_t>(op1 % op2);
+                        break;
+                    }
+                    case 0x7: { // remu (unsigned)
+                        if (uop2 == 0) mresult = static_cast<int32_t>(uop1);
+                        else mresult = static_cast<int32_t>(uop1 % uop2);
+                        break;
+                    }
+                    default:
+                        mresult = 0;
+                        break;
+                }
+                alu_result = mresult;
+                write_reg = instr.rd;
+                write_value = alu_result;
+                reg_write = true;
+            } else {
+                alu_result = alu(operand1, operand2, instr.funct3, instr.funct7 == 0x20);
+                write_reg = instr.rd;
+                write_value = alu_result;
+                reg_write = true;
+            }
             break;
 
         case Opcode::LOAD:
@@ -385,10 +437,9 @@ void CPU::execute() {
                 branch_taken_ = taken;
                 branch_target_ = pipeline_regs_.id_ex_pc + instr.imm;
                 if (taken) {
-                    pc_ = branch_target_;  // 覆盖fetch阶段的PC+4
+                    pc_ = branch_target_;
                     stats_.branch_taken++;
                 } else {
-                    // 保持fetch阶段的PC+4
                     stats_.branch_not_taken++;
                 }
                 hazard_signals_.flush = true;
@@ -399,24 +450,17 @@ void CPU::execute() {
             {
                 if (instr.funct3 == 0) {
                     if (instr.raw == 0x00100073) {
-                        // ebreak
                         handleEbreak();
                     } else if (instr.raw == 0x00000073) {
-                        // ecall
                         handleEcallSyscall();
                     } else if (instr.raw == 0x10200073) {
-                        // sret
-                        // 简化版不支持 S 态，返回
                     } else if (instr.raw == 0x30200073) {
-                        // mret
                         handleMret();
                     } else {
-                        // 其他 SYSTEM 指令 -> 非法指令异常
                         TrapInfo trap = trap_handler_.handleIllegalInstruction(instr.raw, instr.pc);
                         handleTrap(trap);
                     }
                 } else {
-                    // CSR 指令 (csrrw, csrrs, csrrc, csrwi, csrsi, csrci)
                     executeCsrInstruction(instr);
                 }
             }
@@ -427,7 +471,7 @@ void CPU::execute() {
 
         case Opcode::HALT:
             state_ = CpuState::HALTED;
-            trace_.push_back("[EX] 执行 HALT，处理器已停止");
+            trace_.push_back("[EX] HALT executed, processor stopped");
             break;
 
         default:
@@ -449,7 +493,7 @@ void CPU::execute() {
     }
 
     std::ostringstream oss;
-    oss << "[EX] 执行: " << instr.disassembly << " → ALU结果=" << alu_result;
+    oss << "[EX] execute: " << instr.disassembly << " => ALU result=" << alu_result;
     trace_.push_back(oss.str());
 }
 
@@ -562,12 +606,12 @@ void CPU::memoryAccess() {
     pipeline_regs_.ex_mem_valid = false;
 
     std::ostringstream oss;
-    oss << "[MEM] 访问: " << instr.disassembly;
+    oss << "[MEM] access: " << instr.disassembly;
     if (pipeline_regs_.ex_mem_mem_read) {
-        oss << " → 读入=" << mem_data;
+        oss << " => load=" << mem_data;
     }
     if (pipeline_regs_.ex_mem_mem_write) {
-        oss << " → 写入内存";
+        oss << " => store committed";
     }
     trace_.push_back(oss.str());
 }
@@ -579,7 +623,7 @@ void CPU::writeback() {
 
     Instruction instr = pipeline_regs_.mem_wb_instruction;
 
-    // ===== 寄存器写回 =====
+    // Commit register writes in writeback.
     if (pipeline_regs_.mem_wb_reg_write && instr.rd != 0) {
         int32 write_value = pipeline_regs_.mem_wb_alu_result;
         if (instr.opcode == Opcode::LOAD) {
@@ -590,21 +634,20 @@ void CPU::writeback() {
         registers_.write(instr.rd, write_value);
 
         std::ostringstream oss;
-        oss << "[WB] 写回: x" << (int)instr.rd << " = " << write_value;
+        oss << "[WB] writeback: x" << (int)instr.rd << " = " << write_value;
         trace_.push_back(oss.str());
     }
 
-    // ===== PC 更新 =====
-    // 说明：PC在fetch阶段设置为PC+4，在execute阶段分支/跳转指令会覆盖PC
-    // writeback阶段不需要额外处理PC
+    // The sequential teaching core advances PC during fetch. Control-flow changes
+    // are still handled by later stages through flush / trap redirection.
 
     stats_.instruction_count++;
     pipeline_regs_.mem_wb_valid = false;
 
     if (state_ == CpuState::HALTED) {
         std::ostringstream oss;
-        oss << "执行完成！周期数=" << stats_.cycle_count
-            << "，指令数=" << stats_.instruction_count;
+        oss << "[CPU] halted after cycles=" << stats_.cycle_count
+            << ", instructions=" << stats_.instruction_count;
         trace_.push_back(oss.str());
     }
 }
@@ -625,7 +668,7 @@ void CPU::detectHazards() {
     if (ex_instr.opcode == Opcode::LOAD &&
         (id_instr.rs1 == ex_instr.rd || id_instr.rs2 == ex_instr.rd)) {
         hazard_signals_.stall = true;
-        hazard_signals_.description = "Load-Use 冒险，插入一个 stall 周期";
+        hazard_signals_.description = "Load-use hazard detected, pipeline stalled";
     }
 }
 
@@ -654,7 +697,6 @@ void CPU::handleTrap(const TrapInfo& trap) {
 
     trap_handler_.enterTrap(trap);
 
-    // 跳转到 trap 向量
     uint32 trap_pc = trap_handler_.calculateTrapVector(trap.cause);
     pc_ = trap_pc;
     branch_taken_ = true;
@@ -677,15 +719,11 @@ void CPU::handleEcallSyscall() {
     handleTrap(trap);
     trace_.push_back("[SYSTEM] ecall - entering trap handler");
 
-    // 如果是 M 态的 ecall (来自 OS/SBI)，返回到 trap 处理
-    // 简化版：对于纯二进制模式，这里可以模拟一个最小 SBI 调用
     uint32 a7 = registers_.read(constants::REG_A7);
     uint32 a0 = registers_.read(constants::REG_A0);
-    uint32 a1 = registers_.read(constants::REG_A1);
 
     switch (a7) {
         case 0: // SBI_PUTCHAR
-            // 简化实现：打印 a0 的低 8 位作为字符
             {
                 char c = static_cast<char>(a0 & 0xFF);
                 std::ostringstream out;
@@ -706,8 +744,8 @@ void CPU::handleEcallSyscall() {
             break;
     }
 
-    // M 态 ecall 不产生 trap，直接处理后返回
-    // 对于 U/S 态 ecall，需要进 trap
+    // In M mode, ecall raises an exception and enters the trap handler.
+    // U/S mode ecall handling can be extended here in the future.
 }
 
 void CPU::handleEbreak() {
@@ -831,7 +869,7 @@ void CPU::executeCsrInstruction(const Instruction& instr) {
             new_value = old_value & ~instr.rs1;
             break;
         default:
-            // 非法指令
+            // 闂堢偞纭堕幐鍥︽姢
             TrapInfo trap = trap_handler_.handleIllegalInstruction(instr.raw, instr.pc);
             handleTrap(trap);
             return;
@@ -878,11 +916,6 @@ SimulatorState CPU::getSimulatorState() const {
     state.pc = pc_;
     state.registers.assign(register_snapshot.begin(), register_snapshot.end());
 
-    // 调试输出
-    std::cout << "[CPU] getSimulatorState: pc=" << std::hex << pc_
-              << ", registers[1]=" << std::dec << register_snapshot[1]
-              << ", registers[2]=" << register_snapshot[2] << std::endl;
-
     state.current_stage = current_stage_;
     state.pipeline_regs = pipeline_regs_;
     state.stats = stats_;
@@ -905,7 +938,6 @@ SimulatorState CPU::getSimulatorState() const {
             trace_.end() - 20, trace_.end());
     }
 
-    // 填充已解码的流水线指令文本
     state.ifid_text  = pipeline_regs_.if_id_valid  ? decoder_.disassemble(pipeline_regs_.if_id_instruction)  : "";
     state.idex_text  = pipeline_regs_.id_ex_valid  ? decoder_.disassemble(pipeline_regs_.id_ex_instruction)  : "";
     state.exmem_text = pipeline_regs_.ex_mem_valid ? decoder_.disassemble(pipeline_regs_.ex_mem_instruction) : "";
@@ -922,7 +954,6 @@ SimulatorState CPU::getSimulatorState() const {
     state.memwb_valid = pipeline_regs_.mem_wb_valid;
     state.fetch_valid = fetch_view_valid_;
 
-    // 填充内存快照
     if (memory_) {
         state.memory_snapshot = memory_->getMemorySnapshot();
         state.mmu.paging_enabled = memory_->isPagingEnabled();

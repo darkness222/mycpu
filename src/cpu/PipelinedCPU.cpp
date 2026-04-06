@@ -3,6 +3,7 @@
 #include "../include/Constants.h"
 #include "../elf/ElfLoader.h"
 #include <algorithm>
+#include <cstring>
 #include <sstream>
 
 namespace mycpu {
@@ -69,6 +70,19 @@ void PipelinedCPU::reset() {
     test_passed_ = false;
     test_code_ = 0;
     tohost_address_ = 0;
+    branch_predictor_.fill(BranchPredictorEntry{});
+    instruction_cache_.fill(CacheLine{});
+    data_cache_.fill(CacheLine{});
+    div_in_progress_ = false;
+    div_cycle_ = 0;
+    div_dividend_ = 0;
+    div_divisor_ = 0;
+    div_result_ = 0;
+    div_saved_instr_ = Instruction();
+    div_saved_pc_ = 0;
+    div_saved_operand2_ = 0;
+    div_saved_predicted_taken_ = false;
+    div_saved_predicted_target_ = 0;
 
     csr_.setPrivilegeMode(PrivilegeMode::MACHINE);
     csr_.write(CSR::MSTATUS, (static_cast<uint32>(PrivilegeMode::MACHINE) << 11));
@@ -119,6 +133,10 @@ void PipelinedCPU::loadProgram(const std::vector<uint32>& program, uint32 start_
     writeback_view_pc_ = 0;
     writeback_view_text_.clear();
     pipeline_regs_ = PipelineRegisters();
+    instruction_cache_.fill(CacheLine{});
+    data_cache_.fill(CacheLine{});
+    branch_predictor_.fill(BranchPredictorEntry{});
+    div_in_progress_ = false;
 
     std::ostringstream oss;
     oss << "[PIPE] program loaded at 0x" << std::hex << start_address
@@ -156,6 +174,10 @@ bool PipelinedCPU::loadBinary(const std::vector<uint32>& program, uint32 start_a
     writeback_view_pc_ = 0;
     writeback_view_text_.clear();
     pipeline_regs_ = PipelineRegisters();
+    instruction_cache_.fill(CacheLine{});
+    data_cache_.fill(CacheLine{});
+    branch_predictor_.fill(BranchPredictorEntry{});
+    div_in_progress_ = false;
     registers_.write(constants::REG_SP, constants::DEFAULT_STACK_POINTER);
     pushTrace("[PIPE] binary loaded");
     return true;
@@ -199,6 +221,10 @@ bool PipelinedCPU::loadElf(const std::vector<uint8>& elf_data) {
     writeback_view_pc_ = 0;
     writeback_view_text_.clear();
     pipeline_regs_ = PipelineRegisters();
+    instruction_cache_.fill(CacheLine{});
+    data_cache_.fill(CacheLine{});
+    branch_predictor_.fill(BranchPredictorEntry{});
+    div_in_progress_ = false;
     tohost_address_ = loader.getSectionAddress(".tohost");
     if (tohost_address_ == 0) {
         tohost_address_ = constants::RISCV_TEST_TOHOST_FALLBACK;
@@ -329,6 +355,138 @@ int32 PipelinedCPU::alu(int32 operand1, int32 operand2, uint8 funct3, bool is_su
     }
 }
 
+bool PipelinedCPU::isBranchPredictionTaken(uint32 pc) const {
+    const size_t index = (pc >> 2) & 0x3F;
+    return branch_predictor_[index].counter >= 2;
+}
+
+void PipelinedCPU::updateBranchPredictor(uint32 pc, bool taken) {
+    const size_t index = (pc >> 2) & 0x3F;
+    auto& entry = branch_predictor_[index];
+    if (taken) {
+        entry.counter = static_cast<uint8>(std::min<int>(3, entry.counter + 1));
+    } else {
+        entry.counter = static_cast<uint8>(std::max<int>(0, entry.counter - 1));
+    }
+}
+
+void PipelinedCPU::fillCacheLine(std::array<CacheLine, 64>& cache, uint32 addr) {
+    const uint32 base = addr & ~0xFu;
+    const size_t index = (base >> 4) & 0x3F;
+    auto& line = cache[index];
+    line.valid = true;
+    line.tag = base >> 10;
+    for (size_t i = 0; i < line.bytes.size(); ++i) {
+        line.bytes[i] = memory_->readByte(base + static_cast<uint32>(i));
+    }
+}
+
+bool PipelinedCPU::readInstructionCached(uint32 addr, uint32& word) {
+    const uint32 base = addr & ~0xFu;
+    const size_t index = (base >> 4) & 0x3F;
+    const uint32 tag = base >> 10;
+    auto& line = instruction_cache_[index];
+    if (!line.valid || line.tag != tag) {
+        stats_.cache_misses++;
+        stats_.instruction_cache_misses++;
+        fillCacheLine(instruction_cache_, addr);
+    } else {
+        stats_.cache_hits++;
+        stats_.instruction_cache_hits++;
+    }
+    const auto& active = instruction_cache_[index];
+    const size_t offset = addr & 0xFu;
+    word = static_cast<uint32>(active.bytes[offset]) |
+           (static_cast<uint32>(active.bytes[offset + 1]) << 8) |
+           (static_cast<uint32>(active.bytes[offset + 2]) << 16) |
+           (static_cast<uint32>(active.bytes[offset + 3]) << 24);
+    return true;
+}
+
+bool PipelinedCPU::readDataCached(uint32 addr, uint8 size, uint32& value) {
+    const uint32 base = addr & ~0xFu;
+    const size_t index = (base >> 4) & 0x3F;
+    const uint32 tag = base >> 10;
+    auto& line = data_cache_[index];
+    if (!line.valid || line.tag != tag) {
+        stats_.cache_misses++;
+        stats_.data_cache_misses++;
+        fillCacheLine(data_cache_, addr);
+    } else {
+        stats_.cache_hits++;
+        stats_.data_cache_hits++;
+    }
+    const auto& active = data_cache_[index];
+    const size_t offset = addr & 0xFu;
+    value = 0;
+    for (uint8 i = 0; i < size; ++i) {
+        value |= static_cast<uint32>(active.bytes[offset + i]) << (8 * i);
+    }
+    return true;
+}
+
+void PipelinedCPU::writeDataCached(uint32 addr, uint8 size, uint32 value) {
+    const uint32 base = addr & ~0xFu;
+    const size_t index = (base >> 4) & 0x3F;
+    const uint32 tag = base >> 10;
+    auto& line = data_cache_[index];
+    if (line.valid && line.tag == tag) {
+        stats_.cache_hits++;
+        stats_.data_cache_hits++;
+        const size_t offset = addr & 0xFu;
+        for (uint8 i = 0; i < size; ++i) {
+            line.bytes[offset + i] = static_cast<uint8>((value >> (8 * i)) & 0xFF);
+        }
+    } else {
+        stats_.cache_misses++;
+        stats_.data_cache_misses++;
+    }
+}
+
+int32 PipelinedCPU::executeMulDivInstruction(const Instruction& instr, int32 operand1, int32 operand2,
+                                             bool& result_ready, bool& starts_multicycle_div) {
+    result_ready = true;
+    starts_multicycle_div = false;
+
+    const int32 op1 = operand1;
+    const int32 op2 = operand2;
+    const uint32 uop1 = static_cast<uint32>(operand1);
+    const uint32 uop2 = static_cast<uint32>(operand2);
+
+    switch (instr.funct3) {
+        case 0x0: {
+            int64 prod = static_cast<int64>(op1) * static_cast<int64>(op2);
+            return static_cast<int32>(static_cast<uint32>(prod & 0xFFFFFFFFu));
+        }
+        case 0x1: {
+            int64 prod = static_cast<int64>(op1) * static_cast<int64>(op2);
+            return static_cast<int32>(static_cast<uint32>(static_cast<uint64>(prod) >> 32));
+        }
+        case 0x2: {
+            int64 prod = static_cast<int64>(op1) * static_cast<int64>(uop2);
+            return static_cast<int32>(static_cast<uint32>(static_cast<uint64>(prod) >> 32));
+        }
+        case 0x3: {
+            uint64 prod = static_cast<uint64>(uop1) * static_cast<uint64>(uop2);
+            return static_cast<int32>(static_cast<uint32>(prod >> 32));
+        }
+        case 0x4:
+        case 0x5:
+        case 0x6:
+        case 0x7:
+            result_ready = false;
+            starts_multicycle_div = true;
+            div_in_progress_ = true;
+            div_cycle_ = 0;
+            div_dividend_ = operand1;
+            div_divisor_ = operand2;
+            div_saved_instr_ = instr;
+            return 0;
+        default:
+            return 0;
+    }
+}
+
 void PipelinedCPU::step() {
     if (state_ == CpuState::HALTED) {
         return;
@@ -374,6 +532,49 @@ void PipelinedCPU::step() {
     bool flush_decode = false;
     bool halt_requested = false;
     bool abort_cycle = false;
+    bool inject_div_result = false;
+
+    if (div_in_progress_) {
+        hazard_signals_.stall = true;
+        hazard_signals_.description = "Multi-cycle divide in EX";
+        stall_fetch = true;
+        stats_.stall_count++;
+        div_cycle_++;
+        if (div_cycle_ >= 32) {
+            const int32 op1 = div_dividend_;
+            const int32 op2 = div_divisor_;
+            const uint32 uop1 = static_cast<uint32>(op1);
+            const uint32 uop2 = static_cast<uint32>(op2);
+            switch (div_saved_instr_.funct3) {
+                case 0x4:
+                    if (op2 == 0) div_result_ = -1;
+                    else if (op1 == INT32_MIN && op2 == -1) div_result_ = op1;
+                    else div_result_ = static_cast<int32>(op1 / op2);
+                    break;
+                case 0x5:
+                    if (uop2 == 0) div_result_ = -1;
+                    else div_result_ = static_cast<int32>(uop1 / uop2);
+                    break;
+                case 0x6:
+                    if (op2 == 0) div_result_ = op1;
+                    else if (op1 == INT32_MIN && op2 == -1) div_result_ = 0;
+                    else div_result_ = static_cast<int32>(op1 % op2);
+                    break;
+                case 0x7:
+                    if (uop2 == 0) div_result_ = static_cast<int32>(uop1);
+                    else div_result_ = static_cast<int32>(uop1 % uop2);
+                    break;
+                default:
+                    div_result_ = 0;
+                    break;
+            }
+            div_in_progress_ = false;
+            inject_div_result = true;
+            stall_fetch = false;
+            hazard_signals_.stall = false;
+            hazard_signals_.description = "Divide completed";
+        }
+    }
 
     if (old_regs.mem_wb_valid) {
         const Instruction& instr = old_regs.mem_wb_instruction;
@@ -408,32 +609,37 @@ void PipelinedCPU::step() {
             if (!resolveMemoryAccess(addr, MemoryAccessType::LOAD, access_size, old_regs.ex_mem_pc, translated_addr)) {
                 return;
             }
+            uint32 cached_value = 0;
+            const bool use_cache = !isMmioAddress(translated_addr);
+            if (use_cache) {
+                readDataCached(translated_addr, access_size, cached_value);
+            }
             switch (instr.funct3) {
                 case constants::Funct3::LB:
                     next_regs.mem_wb_mem_data = (isMmioAddress(translated_addr) && bus_)
                         ? static_cast<int32>(static_cast<int8>(bus_->read(translated_addr, 1)))
-                        : static_cast<int32>(static_cast<int8>(memory_->readByte(translated_addr)));
+                        : static_cast<int32>(static_cast<int8>(use_cache ? cached_value : memory_->readByte(translated_addr)));
                     break;
                 case constants::Funct3::LH:
                     next_regs.mem_wb_mem_data = (isMmioAddress(translated_addr) && bus_)
                         ? static_cast<int32>(static_cast<int16>(bus_->read(translated_addr, 2)))
-                        : static_cast<int32>(static_cast<int16>(memory_->readHalfWord(translated_addr)));
+                        : static_cast<int32>(static_cast<int16>(use_cache ? cached_value : memory_->readHalfWord(translated_addr)));
                     break;
                 case constants::Funct3::LHU:
                     next_regs.mem_wb_mem_data = (isMmioAddress(translated_addr) && bus_)
                         ? static_cast<int32>(bus_->read(translated_addr, 2))
-                        : static_cast<int32>(memory_->readHalfWord(translated_addr));
+                        : static_cast<int32>(use_cache ? cached_value : memory_->readHalfWord(translated_addr));
                     break;
                 case constants::Funct3::LBU:
                     next_regs.mem_wb_mem_data = (isMmioAddress(translated_addr) && bus_)
                         ? static_cast<int32>(bus_->read(translated_addr, 1))
-                        : static_cast<int32>(memory_->readByte(translated_addr));
+                        : static_cast<int32>(use_cache ? cached_value : memory_->readByte(translated_addr));
                     break;
                 case constants::Funct3::LW:
                 default:
                     next_regs.mem_wb_mem_data = (isMmioAddress(translated_addr) && bus_)
                         ? static_cast<int32>(bus_->read(translated_addr, 4))
-                        : static_cast<int32>(memory_->readWord(translated_addr));
+                        : static_cast<int32>(use_cache ? cached_value : memory_->readWord(translated_addr));
                     break;
             }
         }
@@ -450,16 +656,25 @@ void PipelinedCPU::step() {
             switch (instr.funct3) {
                 case constants::Funct3::SB:
                     if (isMmioAddress(translated_addr) && bus_) bus_->write(translated_addr, static_cast<uint32>(write_data & 0xFF), 1);
-                    else memory_->writeByte(translated_addr, static_cast<uint8>(write_data & 0xFF));
+                    else {
+                        memory_->writeByte(translated_addr, static_cast<uint8>(write_data & 0xFF));
+                        writeDataCached(translated_addr, 1, static_cast<uint32>(write_data & 0xFF));
+                    }
                     break;
                 case constants::Funct3::SH:
                     if (isMmioAddress(translated_addr) && bus_) bus_->write(translated_addr, static_cast<uint32>(write_data & 0xFFFF), 2);
-                    else memory_->writeHalfWord(translated_addr, static_cast<uint16>(write_data & 0xFFFF));
+                    else {
+                        memory_->writeHalfWord(translated_addr, static_cast<uint16>(write_data & 0xFFFF));
+                        writeDataCached(translated_addr, 2, static_cast<uint32>(write_data & 0xFFFF));
+                    }
                     break;
                 case constants::Funct3::SW:
                 default:
                     if (isMmioAddress(translated_addr) && bus_) bus_->write(translated_addr, static_cast<uint32>(write_data), 4);
-                    else memory_->writeWord(translated_addr, static_cast<uint32>(write_data));
+                    else {
+                        memory_->writeWord(translated_addr, static_cast<uint32>(write_data));
+                        writeDataCached(translated_addr, 4, static_cast<uint32>(write_data));
+                    }
                     break;
             }
 
@@ -480,6 +695,16 @@ void PipelinedCPU::step() {
         }
     }
     next_regs.ex_mem_valid = false;
+
+    if (inject_div_result) {
+        next_regs.ex_mem_pc = div_saved_pc_;
+        next_regs.ex_mem_instruction = div_saved_instr_;
+        next_regs.ex_mem_alu_result = div_result_;
+        next_regs.ex_mem_mem_write_data = div_saved_operand2_;
+        next_regs.ex_mem_mem_read = false;
+        next_regs.ex_mem_mem_write = false;
+        next_regs.ex_mem_valid = true;
+    }
 
     if (old_regs.if_id_valid && old_regs.id_ex_valid) {
         const Instruction& decode_instr = old_regs.if_id_instruction;
@@ -516,6 +741,7 @@ void PipelinedCPU::step() {
         int32 alu_result = 0;
         bool take_branch = false;
         uint32 branch_target = 0;
+        bool multicycle_div_started = false;
 
         switch (instr.opcode) {
             case Opcode::LUI:
@@ -546,7 +772,25 @@ void PipelinedCPU::step() {
                 }
                 break;
             case Opcode::OP:
-                alu_result = alu(operand1, operand2, instr.funct3, instr.funct7 == 0x20);
+                if (instr.funct7 == 0x01) {
+                    bool result_ready = false;
+                    bool starts_multicycle_div = false;
+                    alu_result = executeMulDivInstruction(instr, operand1, operand2, result_ready, starts_multicycle_div);
+                    if (starts_multicycle_div) {
+                        multicycle_div_started = true;
+                        div_saved_pc_ = old_regs.id_ex_pc;
+                        div_saved_operand2_ = operand2;
+                        div_saved_predicted_taken_ = old_regs.id_ex_predicted_taken;
+                        div_saved_predicted_target_ = old_regs.id_ex_predicted_target;
+                        next_regs.ex_mem_valid = false;
+                    }
+                    if (!result_ready) {
+                        next_regs.id_ex_valid = false;
+                        break;
+                    }
+                } else {
+                    alu_result = alu(operand1, operand2, instr.funct3, instr.funct7 == 0x20);
+                }
                 break;
             case Opcode::LOAD:
             case Opcode::STORE:
@@ -563,6 +807,7 @@ void PipelinedCPU::step() {
                     default: break;
                 }
                 branch_target = old_regs.id_ex_pc + instr.imm;
+                updateBranchPredictor(old_regs.id_ex_pc, take_branch);
                 if (take_branch) {
                     stats_.branch_taken++;
                 } else {
@@ -605,12 +850,27 @@ void PipelinedCPU::step() {
         next_regs.ex_mem_mem_write_data = operand2;
         next_regs.ex_mem_mem_read = control.mem_read;
         next_regs.ex_mem_mem_write = control.mem_write;
-        next_regs.ex_mem_valid = !control.halt;
+        next_regs.ex_mem_valid = !control.halt && !multicycle_div_started;
 
-        if ((instr.opcode == Opcode::JAL) || (instr.opcode == Opcode::JALR) || (instr.opcode == Opcode::BRANCH && take_branch)) {
+        bool prediction_miss = false;
+        if (instr.opcode == Opcode::BRANCH) {
+            prediction_miss = (take_branch != old_regs.id_ex_predicted_taken) ||
+                              (take_branch && old_regs.id_ex_predicted_taken && branch_target != old_regs.id_ex_predicted_target);
+            if (prediction_miss) {
+                stats_.branch_mispredict_count++;
+            }
+        }
+
+        if ((instr.opcode == Opcode::JAL) || (instr.opcode == Opcode::JALR) ||
+            (instr.opcode == Opcode::BRANCH && ((take_branch && !old_regs.id_ex_predicted_taken) || prediction_miss))) {
             flush_decode = true;
             hazard_signals_.flush = true;
             pc_ = branch_target;
+            stats_.flush_count++;
+        } else if (instr.opcode == Opcode::BRANCH && !take_branch && old_regs.id_ex_predicted_taken) {
+            flush_decode = true;
+            hazard_signals_.flush = true;
+            pc_ = old_regs.id_ex_pc + 4;
             stats_.flush_count++;
         }
 
@@ -638,6 +898,8 @@ void PipelinedCPU::step() {
         next_regs.id_ex_reg_data2 = registers_.read(instr.rs2);
         next_regs.id_ex_alu_result = 0;
         next_regs.id_ex_valid = true;
+        next_regs.id_ex_predicted_taken = old_regs.if_id_predicted_taken;
+        next_regs.id_ex_predicted_target = old_regs.if_id_predicted_target;
     }
 
     if (flush_decode) {
@@ -661,7 +923,8 @@ void PipelinedCPU::step() {
             handleTrap(trap_handler_.handleInstructionAccessFault(fetch_pc));
             return;
         }
-        const uint32 raw = memory_->readWord(translated_pc);
+        uint32 raw = 0;
+        readInstructionCached(translated_pc, raw);
         const Instruction instr = decoder_.decode(raw, fetch_pc);
         fetch_view_valid_ = true;
         fetch_view_pc_ = fetch_pc;
@@ -669,7 +932,16 @@ void PipelinedCPU::step() {
         next_regs.if_id_pc = fetch_pc;
         next_regs.if_id_instruction = instr;
         next_regs.if_id_valid = true;
-        pc_ = fetch_pc + 4;
+        next_regs.if_id_predicted_taken = false;
+        next_regs.if_id_predicted_target = fetch_pc + 4;
+        uint32 next_pc = fetch_pc + 4;
+        if (instr.opcode == Opcode::BRANCH && isBranchPredictionTaken(fetch_pc)) {
+            next_regs.if_id_predicted_taken = true;
+            next_regs.if_id_predicted_target = fetch_pc + instr.imm;
+            next_pc = next_regs.if_id_predicted_target;
+            hazard_signals_.description = "BHT predicts branch taken";
+        }
+        pc_ = next_pc;
     } else {
         next_regs.if_id_valid = false;
     }
@@ -893,6 +1165,18 @@ SimulatorState PipelinedCPU::getSimulatorState() const {
         state.memory_snapshot = memory_->getMemorySnapshot();
         state.mmu.paging_enabled = memory_->isPagingEnabled();
         state.mmu.mapped_pages = static_cast<uint32>(memory_->getMappedPageCount());
+        for (const auto& mapping : memory_->getPageTableSnapshot()) {
+            std::ostringstream page_desc;
+            page_desc << "VPN 0x" << std::hex << mapping.first
+                      << " -> PPN 0x" << mapping.second.physical_page
+                      << " [" << (mapping.second.readable ? 'R' : '-')
+                      << (mapping.second.writable ? 'W' : '-')
+                      << (mapping.second.executable ? 'X' : '-') << "]";
+            state.mmu.page_mappings.push_back(page_desc.str());
+            if (state.mmu.page_mappings.size() >= 8) {
+                break;
+            }
+        }
     }
 
     state.csr.mstatus = csr_.getMstatus();
